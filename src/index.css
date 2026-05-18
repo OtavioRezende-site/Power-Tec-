@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&family=Outfit:wght@400;600;700;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+  
+  --color-brand-orange: #FF5A00;
+  --color-brand-orange-hover: #E65100;
+  --color-matte-black: #050505;
+  --color-matte-onyx: #141414;
+  
+  --shadow-premium: 0 0 30px rgba(255, 90, 0, 0.3);
+  --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+@layer base {
+  body {
+    @apply bg-matte-black text-[#F5F5F7] font-sans overflow-x-hidden;
+  }
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-linear-to-br from-[#F5F5F7] to-[#A1A1AA];
+}
+
+.premium-card {
+  @apply bg-matte-onyx border border-white/5 transition-all duration-500 hover:border-brand-orange/30 relative overflow-hidden;
+}
+
+.premium-card::before {
+  content: "";
+  @apply absolute top-0 left-0 w-full h-[1px] bg-linear-to-r from-transparent via-brand-orange/50 to-transparent opacity-0 transition-opacity duration-500;
+}
+
+.premium-card:hover::before {
+  @apply opacity-100;
+}
+
+.badge {
+  @apply inline-block px-3 py-1 bg-brand-orange/10 border border-brand-orange/20 rounded-md;
+  @apply text-brand-orange text-[10px] font-bold tracking-[0.2em] uppercase italic;
+}
+
+.btn-primary {
+  @apply px-8 py-4 bg-brand-orange text-black font-extrabold uppercase tracking-wider rounded-xl shadow-premium transition-transform active:scale-95 hover:scale-105;
+}
+
+.nav-blur {
+  @apply backdrop-blur-md bg-black/50 border-b border-white/5;
+}
+
+.footer-blur {
+  @apply bg-black/80 backdrop-blur-xl border-t border-white/5;
+}
