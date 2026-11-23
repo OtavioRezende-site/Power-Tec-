@@ -1,53 +1,65 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { motion } from 'motion/react';
-import Lenis from 'lenis';
-import { 
-  Smartphone, 
-  Wrench, 
-  ShieldCheck, 
-  TrendingUp, 
-  Instagram, 
-  Mail, 
-  MessageCircle, 
-  MapPin 
+import {
+  Smartphone,
+  Wrench,
+  ShieldCheck,
+  TrendingUp,
+  Instagram,
+  Mail,
+  MapPin,
+  Clock,
+  Navigation,
+  ChevronDown,
+  ArrowRight,
+  RefreshCw,
+  CreditCard,
+  Award,
+  Eye,
+  Menu,
+  X,
 } from 'lucide-react';
+import {
+  PRODUCTS,
+  CLIENT_PHOTOS,
+  FAQ_ITEMS,
+  STORE_INFO,
+  Product,
+  ProductCategory,
+  buildWhatsAppUrl,
+} from './data/catalog';
+import { WhatsAppIcon, WazeIcon, PhoneStudioVisual } from './components/Icons';
+import { ProductModal } from './components/ProductModal';
 
-gsap.registerPlugin(ScrollTrigger);
-
-// --- Three.js Background Component ---
+// --- Lightweight Three.js Ambient Particles ---
 function ThreeBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (!canvasRef.current) return;
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) return;
 
     const renderer = new THREE.WebGLRenderer({
       canvas: canvasRef.current,
       alpha: true,
-      antialias: true
+      antialias: false,
+      powerPreference: 'low-power',
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.setSize(window.innerWidth, window.innerHeight);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
     camera.position.z = 2;
 
-    // Galaxy / Particles
-    const particlesCount = 2000;
+    const particlesCount = 750;
     const posArray = new Float32Array(particlesCount * 3);
     for (let i = 0; i < particlesCount * 3; i++) {
       posArray[i] = (Math.random() - 0.5) * 5;
@@ -57,29 +69,31 @@ function ThreeBackground() {
     particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
 
     const particlesMaterial = new THREE.PointsMaterial({
-      size: 0.005,
-      color: '#FF5A00',
+      size: 0.006,
+      color: '#FF7A29',
       transparent: true,
-      opacity: 0.4,
-      blending: THREE.AdditiveBlending
+      opacity: 0.35,
+      blending: THREE.AdditiveBlending,
     });
 
     const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
     scene.add(particlesMesh);
 
-    // Animation Loop (Using performance.now() per instructions)
     let lastTime = performance.now();
-    let animationId: number;
+    let animationId = 0;
 
     const animate = () => {
-      const currentTime = performance.now();
-      const deltaTime = (currentTime - lastTime) / 1000;
-      lastTime = currentTime;
+      if (!document.hidden) {
+        const currentTime = performance.now();
+        const deltaTime = Math.min((currentTime - lastTime) / 1000, 0.1);
+        lastTime = currentTime;
 
-      particlesMesh.rotation.y += deltaTime * 0.05;
-      particlesMesh.rotation.x += deltaTime * 0.02;
-
-      renderer.render(scene, camera);
+        particlesMesh.rotation.y += deltaTime * 0.04;
+        particlesMesh.rotation.x += deltaTime * 0.015;
+        renderer.render(scene, camera);
+      } else {
+        lastTime = performance.now();
+      }
       animationId = requestAnimationFrame(animate);
     };
 
@@ -111,459 +125,1038 @@ function ThreeBackground() {
   );
 }
 
-const WhatsAppIcon = ({ size = 20, className = "" }: { size?: number, className?: string }) => (
-  <svg 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="currentColor" 
-    className={className}
-  >
-    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.284l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.768-5.764-5.768zm3.393 8.167c-.145.405-.831.76-1.144.806-.29.044-.668.045-1.09-.092-.253-.082-.571-.196-.981-.373-1.726-.747-2.813-2.515-2.899-2.634-.086-.118-.702-.931-.702-1.774 0-.843.433-1.258.589-1.432.158-.174.346-.218.462-.218.116 0 .231.001.332.005.109.004.253-.041.397.302.145.344.492 1.198.535 1.285.044.088.073.19.015.306-.058.116-.088.19-.174.291-.087.102-.183.228-.261.306-.086.088-.177.184-.076.357.101.173.449.742.964 1.201.663.591 1.222.775 1.396.862.174.087.276.073.377-.044.101-.116.434-.506.55-.68.116-.173.232-.144.39-.087.158.058 1.013.478 1.187.565.174.087.29.13.332.203.044.072.044.419-.101.824z"/>
-  </svg>
-);
+type FilterOption = 'todos' | ProductCategory;
 
-// --- Main App Component ---
+const FILTER_TABS: { id: FilterOption; label: string }[] = [
+  { id: 'todos', label: 'Todos os Modelos' },
+  { id: 'linha-18', label: 'Linha iPhone 18' },
+  { id: 'lacrados', label: 'Lacrados' },
+  { id: 'seminovos', label: 'Seminovos' },
+];
+
 export default function App() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const carouselRef = useRef<HTMLDivElement>(null);
+  const [activeFilter, setActiveFilter] = useState<FilterOption>('todos');
+  const [cardSelections, setCardSelections] = useState<
+    Record<string, { storage: string; finishIdx: number }>
+  >({});
+  const [modalProduct, setModalProduct] = useState<Product | null>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    // 1. Lenis Smooth Scroll
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-    });
+  // Trade-in estimator state
+  const [tradeModel, setTradeModel] = useState('iPhone 14');
+  const [tradeStorage, setTradeStorage] = useState('128GB');
+  const [tradeCondition, setTradeCondition] = useState('Excelente estado (sem marcas)');
+  const [tradeTarget, setTradeTarget] = useState('iPhone 18 Pro Max');
 
-    lenis.on('scroll', ScrollTrigger.update);
-    gsap.ticker.add((time) => {
-      lenis.raf(time * 1000);
-    });
-    gsap.ticker.lagSmoothing(0);
+  const filteredProducts =
+    activeFilter === 'todos'
+      ? PRODUCTS
+      : PRODUCTS.filter((item) => item.category.includes(activeFilter));
 
-    // 2. GSAP Animations
-    const ctx = gsap.context(() => {
-      // Fade in animations
-      gsap.utils.toArray('.reveal').forEach((elem: any) => {
-        gsap.from(elem, {
-          y: 60,
-          opacity: 0,
-          duration: 1,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: elem,
-            start: 'top 85%',
-          }
-        });
-      });
-
-      // Infinite Carousel for Customers
-      if (carouselRef.current) {
-        const carousel = carouselRef.current;
-        const width = carousel.offsetWidth;
-        
-        gsap.to(carousel, {
-          x: `-${width / 2}px`,
-          duration: 30,
-          ease: 'none',
-          repeat: -1
-        });
+  const getSelection = (product: Product) => {
+    return (
+      cardSelections[product.id] || {
+        storage: product.storages[0],
+        finishIdx: 0,
       }
-    }, containerRef);
+    );
+  };
 
-    return () => {
-      ctx.revert();
-      lenis.destroy();
-    };
-  }, []);
+  const updateSelection = (
+    productId: string,
+    patch: Partial<{ storage: string; finishIdx: number }>,
+    product: Product
+  ) => {
+    setCardSelections((prev) => {
+      const current = prev[productId] || {
+        storage: product.storages[0],
+        finishIdx: 0,
+      };
+      return {
+        ...prev,
+        [productId]: { ...current, ...patch },
+      };
+    });
+  };
 
-  const products = [
-    { name: "iPhone 14 128GB", price: "R$ 2.590", img: "/Screenshot_20260508_121257_Instagram.jpg", status: "Semi Novo" },
-    { name: "iPhone 13 128GB", price: "R$ 2.190", img: "/Screenshot_20260508_121352_Instagram.jpg", status: "Semi Novo" },
-    { name: "iPhone 16 Pro Max", price: "Sob Consulta", img: "/AISelect_20260508_121612_WhatsApp.jpg", status: "Lacrado" },
-    { name: "iPhone 17 Pro Max", price: "Sob Consulta", img: "/AISelect_20260508_121856_WhatsApp.jpg", status: "Lacrado" },
-  ];
-
-  const clients = [
-    "/AISelect_20260508_124523_Instagram.jpg",
-    "/AISelect_20260508_124508_Instagram.jpg",
-    "/AISelect_20260508_124455_Instagram.jpg",
-    "/AISelect_20260508_124447_Instagram.jpg",
-    "/AISelect_20260508_124438_Instagram.jpg",
-    "/AISelect_20260508_122234_Instagram.jpg",
-    "/AISelect_20260508_122212_Instagram.jpg",
-    "/AISelect_20260508_122157_Instagram.jpg",
-    "/AISelect_20260508_122139_Instagram.jpg",
-  ];
+  const tradeInWhatsAppUrl = buildWhatsAppUrl(
+    `Olá! Vim pelo site da Power Tec e quero avaliar meu aparelho usado na troca:\n• Meu aparelho: ${tradeModel} (${tradeStorage})\n• Estado: ${tradeCondition}\n• Interesse em trocar por: ${tradeTarget}`
+  );
 
   return (
-    <div ref={containerRef} className="relative z-10">
-      {/* --- Background Glows --- */}
+    <div className="relative z-10 min-h-screen">
+      {/* Subtle Ambient Glows */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-brand-orange opacity-10 rounded-full blur-[120px]"></div>
-        <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-brand-orange opacity-5 rounded-full blur-[100px]"></div>
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#F5F5F7 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+        <div className="absolute top-[-10%] right-[-5%] w-[560px] h-[560px] bg-brand-orange/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[420px] h-[420px] bg-brand-orange/5 rounded-full blur-[110px]" />
       </div>
 
       <ThreeBackground />
 
-      {/* --- Header --- */}
-      <nav className="fixed top-0 w-full z-50 px-10 py-6 flex justify-between items-center nav-blur">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-brand-orange rounded-lg flex items-center justify-center font-bold text-black font-display">P</div>
-          <div className="text-xl font-display font-bold tracking-tighter uppercase italic">
-            POWER <span className="text-brand-orange">TEC</span>
+      {/* --- Top Navigation (3-Zone Contract) --- */}
+      <header className="fixed top-0 inset-x-0 z-50 nav-blur">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-20 flex items-center justify-between gap-8">
+          {/* Zone 1: Brand Wordmark */}
+          <a
+            href="#hero"
+            className="flex items-center gap-2.5 whitespace-nowrap shrink-0"
+          >
+            <div className="w-9 h-9 bg-linear-to-br from-[#FF7A29] to-[#FF5A00] rounded-lg flex items-center justify-center font-extrabold text-black font-display text-lg">
+              P
+            </div>
+            <span className="text-xl font-display font-bold tracking-tight uppercase italic text-white">
+              POWER <span className="text-[#FF7A29]">TEC</span>
+            </span>
+          </a>
+
+          {/* Zone 2: Clean Single-Line Nav Links */}
+          <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-[#A1A1AA]">
+            <a
+              href="#hero"
+              className="hover:text-white transition-colors whitespace-nowrap shrink-0"
+            >
+              Início
+            </a>
+            <a
+              href="#vitrine"
+              className="hover:text-white transition-colors whitespace-nowrap shrink-0"
+            >
+              Vitrine
+            </a>
+            <a
+              href="#troca"
+              className="hover:text-white transition-colors whitespace-nowrap shrink-0"
+            >
+              Troca de Usado
+            </a>
+            <a
+              href="#servicos"
+              className="hover:text-white transition-colors whitespace-nowrap shrink-0"
+            >
+              Serviços
+            </a>
+            <a
+              href="#localizacao"
+              className="hover:text-white transition-colors whitespace-nowrap shrink-0"
+            >
+              Localização
+            </a>
+          </nav>
+
+          {/* Zone 3: Single Primary Action + Mobile Trigger */}
+          <div className="flex items-center gap-3 shrink-0">
+            <a
+              href={buildWhatsAppUrl(
+                'Olá! Vim pelo site da Power Tec e gostaria de falar com um atendente.'
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 bg-[#FF7A29]/15 border border-[#FF7A29]/60 text-[#FF8C42] hover:bg-[#FF7A29] hover:text-black font-semibold text-sm rounded-full transition-all whitespace-nowrap shrink-0"
+            >
+              <WhatsAppIcon size={18} />
+              Atendimento
+            </a>
+
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+              className="lg:hidden w-11 h-11 rounded-xl border border-white/10 bg-white/5 text-white flex items-center justify-center cursor-pointer"
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
         </div>
-        <div className="hidden lg:flex items-center space-x-8 text-sm font-medium text-[#A1A1AA]">
-          <a href="#hero" className="text-[#F5F5F7] hover:text-brand-orange transition-colors">Home</a>
-          <a href="#servicos" className="hover:text-brand-orange transition-colors">Serviços</a>
-          <a href="#vitrine" className="hover:text-brand-orange transition-colors">Catálogo</a>
-          <a 
-            href="https://api.whatsapp.com/send?phone=5521967296969" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-5 py-2 bg-brand-orange text-black font-bold rounded-full transition-transform active:scale-95 flex items-center gap-2"
-          >
-            <WhatsAppIcon size={18} />
-            VIM PELO SITE
-          </a>
-        </div>
-      </nav>
+
+        {/* Mobile Drawer Menu */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden border-t border-white/10 bg-matte-black/95 backdrop-blur-xl px-6 py-5 space-y-4">
+            <nav className="flex flex-col space-y-3 text-base font-medium text-[#D4D4D8]">
+              {[
+                { href: '#hero', label: 'Início' },
+                { href: '#vitrine', label: 'Vitrine iPhone 18' },
+                { href: '#troca', label: 'Troca de Usado' },
+                { href: '#servicos', label: 'Serviços' },
+                { href: '#localizacao', label: 'Localização' },
+              ].map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="py-1.5 hover:text-[#FF7A29] transition-colors"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </nav>
+            <a
+              href={buildWhatsAppUrl(
+                'Olá! Vim pelo site da Power Tec e gostaria de atendimento.'
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full py-3.5 bg-[#FF7A29] text-black font-bold rounded-xl"
+            >
+              <WhatsAppIcon size={19} />
+              Falar no WhatsApp
+            </a>
+          </div>
+        )}
+      </header>
 
       <main>
-        {/* --- Hero Section --- */}
-        <section id="hero" className="relative min-h-screen flex flex-col items-center justify-center px-10 pt-20 gap-16 overflow-hidden max-w-[1440px] mx-auto">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-            style={{ zIndex: -1, opacity: 0.25 }}
-          >
-            <source src="/Cinematic_macro_close-up_of_a_202605181050.mp4" type="video/mp4" />
-          </video>
-          
-          <div className="max-w-4xl space-y-7 z-10 text-center">
-            <motion.div
+        {/* --- 1. Full-Bleed Hero Section --- */}
+        <section
+          id="hero"
+          className="relative isolate w-full min-h-[100dvh] flex flex-col justify-between pt-28 pb-10 px-6 sm:px-10 overflow-hidden"
+        >
+          <div className="absolute inset-0 w-full h-full -z-10 overflow-hidden pointer-events-none">
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              className="w-full h-full min-w-full min-h-full object-cover object-center opacity-35"
+            >
+              <source
+                src="/Cinematic_macro_close-up_of_a_202605181050.mp4"
+                type="video/mp4"
+              />
+            </video>
+            <div className="absolute inset-0 bg-linear-to-b from-matte-black/65 via-matte-black/30 to-matte-black" />
+          </div>
+
+          <div className="my-auto w-full max-w-4xl mx-auto text-center space-y-7 relative z-10 py-10">
+            <motion.p
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45 }}
+              className="text-xs sm:text-sm font-semibold tracking-[0.2em] uppercase text-[#FF8C42]"
+            >
+              Especialistas Apple em Maricá · Linha iPhone 18 Disponível
+            </motion.p>
+
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="badge mx-auto"
+              className="text-4xl sm:text-6xl lg:text-7xl font-display font-bold leading-[1.02] tracking-tight text-gradient"
             >
-              Top 1% Apple Specialist
-            </motion.div>
-            
-            <motion.h1 
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="text-6xl lg:text-8xl font-display font-bold leading-[0.9] tracking-tight text-gradient"
-            >
-              A Experiência <span className="text-brand-orange">Premium</span> <br />que o seu Apple Merece.
+              A Experiência <span className="text-[#FF7A29]">Premium</span>{' '}
+              que o seu Apple Merece.
             </motion.h1>
-            
-            <motion.p 
-              initial={{ opacity: 0, y: 30 }}
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-lg lg:text-xl text-[#A1A1AA] max-w-2xl leading-relaxed font-light mx-auto"
+              transition={{ duration: 0.6, delay: 0.12 }}
+              className="text-base sm:text-lg lg:text-xl text-[#D4D4D8] max-w-2xl mx-auto leading-relaxed"
             >
-              Especialistas em conserto e venda de iPhones em Maricá. Confiança, garantia e o padrão de excelência Power Tec.
+              iPhones lacrados de última geração, seminovos revisados com garantia documentada e avaliação justa do seu usado na troca.
             </motion.p>
-            
+
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-2"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.22 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2"
             >
-              <a 
-                href="https://api.whatsapp.com/send?phone=5521967296969&text=Olá,%20vim%20pelo%20site%20e%20gostaria%20de%20atendimento."
+              <a
+                href={buildWhatsAppUrl(
+                  'Olá, vim pelo site da Power Tec e gostaria de falar com um especialista sobre os iPhones disponíveis.'
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-primary"
+                className="btn-primary inline-flex items-center justify-center gap-2.5 w-full sm:w-auto whitespace-nowrap"
               >
+                <WhatsAppIcon size={21} />
                 Fale com um Especialista
               </a>
-              
-              <div className="flex items-center space-x-3">
-                <div className="flex -space-x-3">
-                  {clients.slice(0, 4).map((src, i) => (
-                    <div key={i} className="w-10 h-10 rounded-full border-2 border-matte-black overflow-hidden bg-neutral-800 shadow-xl">
-                      <img 
-                        src={src} 
-                        alt={`Cliente ${i + 1}`} 
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          if (!target.src.includes('public/')) {
-                            target.src = '/public' + target.src.substring(target.src.lastIndexOf('/'));
-                          }
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div className="flex flex-col items-start leading-none">
-                  <span className="text-sm font-bold text-white">+2.4k Clientes</span>
-                  <span className="text-[10px] text-[#A1A1AA] uppercase tracking-widest font-medium">Satisfeitos</span>
-                </div>
-              </div>
+
+              <a
+                href="#vitrine"
+                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.09] text-white font-semibold transition-colors w-full sm:w-auto whitespace-nowrap"
+              >
+                Explorar Vitrine
+                <ArrowRight size={18} />
+              </a>
             </motion.div>
-          </div>
-        </section>
 
-        {/* --- Services Section --- */}
-        <section id="servicos" className="py-24 px-8 max-w-7xl mx-auto">
-          <div className="text-center mb-16 reveal">
-            <h2 className="text-4xl font-display font-bold mb-4">Nossos Serviços</h2>
-            <p className="text-[#A1A1AA]">Excelência e tecnologia em cada detalhe.</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="premium-card p-10 rounded-2xl reveal group">
-              <div className="w-16 h-16 bg-brand-orange/10 rounded-xl flex items-center justify-center mb-8 text-brand-orange group-hover:scale-110 transition-transform">
-                <Smartphone size={32} />
-              </div>
-              <h3 className="text-2xl font-display font-bold mb-4">Venda de iPhones</h3>
-              <p className="text-[#A1A1AA] mb-6">
-                Aparelhos novos, lacrados e seminovos com procedência e garantia total. 
-                Seu upgrade seguro começa aqui.
-              </p>
-              <span className="text-brand-orange font-semibold">Valor: Sob consulta</span>
-            </div>
-
-            <div className="premium-card p-10 rounded-2xl reveal delay-100 group">
-              <div className="w-16 h-16 bg-brand-orange/10 rounded-xl flex items-center justify-center mb-8 text-brand-orange group-hover:scale-110 transition-transform">
-                <Wrench size={32} />
-              </div>
-              <h3 className="text-2xl font-display font-bold mb-4">Conserto de iPhone</h3>
-              <p className="text-[#A1A1AA] mb-6">
-                Reparos técnicos avançados, troca de tela, bateria e placas em laboratório 
-                especializado de última geração.
-              </p>
-              <span className="text-brand-orange font-semibold">Valor: Sob consulta</span>
-            </div>
-          </div>
-        </section>
-
-        {/* --- Product Showcase --- */}
-        <section id="vitrine" className="py-24 px-8 bg-matte-onyx/30">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6 reveal">
-              <div>
-                <h2 className="text-4xl font-display font-bold mb-4 text-gradient">Vitrine Premium</h2>
-                <p className="text-[#A1A1AA]">Aparelhos selecionados com o mais alto rigor de qualidade.</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {products.map((product, i) => (
-                <div key={i} className="premium-card rounded-2xl overflow-hidden group reveal" style={{ transitionDelay: `${i * 100}ms` }}>
-                  <div className="aspect-[4/5] overflow-hidden">
-                    <img 
-                      src={product.img} 
-                      alt={product.name} 
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            {/* Real Client Social Proof */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.35 }}
+              className="flex items-center justify-center gap-3.5 pt-2"
+            >
+              <div className="flex -space-x-2.5">
+                {CLIENT_PHOTOS.slice(0, 4).map((src, i) => (
+                  <div
+                    key={i}
+                    className="w-10 h-10 rounded-full border-2 border-matte-black overflow-hidden bg-neutral-800"
+                  >
+                    <img
+                      src={src}
+                      alt={`Cliente Power Tec ${i + 1}`}
+                      className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
                     />
                   </div>
-                  <div className="p-6">
-                    <div className="text-xs font-bold text-brand-orange mb-2 tracking-widest uppercase">{product.status}</div>
-                    <h3 className="text-xl font-display font-bold mb-2">{product.name}</h3>
-                    <div className="text-2xl font-bold mb-6 text-[#F5F5F7]">{product.price}</div>
-                    
-                    <a 
-                      href={`https://api.whatsapp.com/send?phone=5521967296969&text=Gostaria%20de%20saber%20mais%20sobre%20o%20${encodeURIComponent(product.name)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center w-full py-5 bg-[#25D366] text-white font-extrabold text-sm rounded-xl hover:bg-[#20ba5a] transition-all transform hover:-translate-y-1 shadow-[0_10px_20px_rgba(37,211,102,0.2)]"
-                    >
-                      Falar com o atendente
-                    </a>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <div className="text-left leading-tight">
+                <p className="text-sm font-bold text-white tabular-nums">
+                  +2.400 clientes atendidos
+                </p>
+                <p className="text-xs text-[#A1A1AA]">
+                  Referência em iPhones em Maricá
+                </p>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* 4-Column Store Highlights Strip */}
+          <div className="relative z-10 max-w-7xl w-full mx-auto pt-6 border-t border-white/10 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="flex items-center gap-3">
+              <Smartphone size={20} className="text-[#FF7A29] shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-white">Linha iPhone 18</p>
+                <p className="text-xs text-[#A1A1AA]">18, 18 Pro e 18 Pro Max</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <RefreshCw size={20} className="text-[#FF7A29] shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-white">Troca Facilitada</p>
+                <p className="text-xs text-[#A1A1AA]">Seu usado vale entrada</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <CreditCard size={20} className="text-[#FF7A29] shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-white">Até 18x no Cartão</p>
+                <p className="text-xs text-[#A1A1AA]">Ou condição especial no PIX</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <ShieldCheck size={20} className="text-[#FF7A29] shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-white">Garantia Real</p>
+                <p className="text-xs text-[#A1A1AA]">Procedência 100% verificada</p>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* --- Customer Carousel --- */}
-        <section className="py-24 overflow-hidden border-y border-white/5 relative bg-matte-black">
-          <div className="max-w-7xl mx-auto px-8 mb-16 reveal">
-            <h2 className="text-4xl font-display font-bold text-center mb-4">O Padrão Power Tec</h2>
-            <p className="text-[#A1A1AA] text-center max-w-2xl mx-auto">
-              Nossa maior garantia é a satisfação dos nossos clientes. Junte-se aos milhares de usuários que confiam na Power Tec.
+        {/* --- 2. Interactive Vitrine Premium (Sales Core) --- */}
+        <section id="vitrine" className="py-24 px-6 sm:px-10 bg-[#0A0A0D] border-t border-white/[0.06]">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12">
+              <div className="space-y-3 max-w-2xl">
+                <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#FF7A29]">
+                  Catálogo Atualizado · Geração 18
+                </p>
+                <h2 className="text-3xl sm:text-5xl font-display font-bold text-gradient">
+                  Vitrine Premium Power Tec
+                </h2>
+                <p className="text-[#A1A1AA] text-base">
+                  Escolha o modelo, a capacidade e o acabamento ideal. Consulte disponibilidade em tempo real direto com nossa equipe.
+                </p>
+              </div>
+
+              {/* Functional Category Filter Tabs */}
+              <div
+                className="flex flex-wrap items-center gap-1.5 p-1.5 bg-matte-onyx border border-white/10 rounded-xl w-fit"
+                role="tablist"
+                aria-label="Filtrar aparelhos por categoria"
+              >
+                {FILTER_TABS.map((tab) => {
+                  const isActive = activeFilter === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => setActiveFilter(tab.id)}
+                      className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                        isActive
+                          ? 'bg-[#FF7A29] text-black'
+                          : 'text-[#A1A1AA] hover:text-white'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Product Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {filteredProducts.map((product) => {
+                const selection = getSelection(product);
+                const activeFinish =
+                  product.finishes[selection.finishIdx] || product.finishes[0];
+                const whatsappMessage = `Olá! Vim pelo site da Power Tec e quero consultar o ${product.name} (${selection.storage} · ${activeFinish.name} · ${product.condition}).`;
+
+                return (
+                  <article
+                    key={product.id}
+                    className="premium-card rounded-2xl flex flex-col justify-between group"
+                  >
+                    <div>
+                      {/* Product Visual (Click opens quick-view modal) */}
+                      <button
+                        type="button"
+                        onClick={() => setModalProduct(product)}
+                        className="relative block w-full aspect-[4/5] overflow-hidden bg-[#0E0E11] text-left cursor-pointer"
+                        aria-label={`Ver detalhes do ${product.name}`}
+                      >
+                        {product.img ? (
+                          <img
+                            src={product.img}
+                            alt={product.name}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <PhoneStudioVisual
+                            modelName={product.name}
+                            finish={activeFinish}
+                            cameraLayout={product.cameraLayout}
+                          />
+                        )}
+
+                        <span className="absolute top-3 right-3 px-3 py-1.5 rounded-lg bg-black/70 backdrop-blur-md border border-white/10 text-[11px] font-medium text-white inline-flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Eye size={13} />
+                          Detalhes
+                        </span>
+                      </button>
+
+                      {/* Card Body */}
+                      <div className="p-5 space-y-4">
+                        <div>
+                          <div className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider uppercase text-[#FF7A29]">
+                            <span>{product.condition}</span>
+                            <span aria-hidden="true">·</span>
+                            <span className="text-[#A1A1AA]">{product.series}</span>
+                          </div>
+                          <h3 className="text-xl font-display font-bold text-white mt-1">
+                            {product.name}
+                          </h3>
+                          <div className="mt-1.5">
+                            <p className="text-2xl font-bold text-white tabular-nums">
+                              {product.price}
+                            </p>
+                            <p className="text-xs text-[#A1A1AA] mt-0.5">
+                              {product.installmentHint}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Interactive Storage Options */}
+                        <div className="flex flex-wrap gap-1.5">
+                          {product.storages.map((cap) => (
+                            <button
+                              key={cap}
+                              type="button"
+                              onClick={() =>
+                                updateSelection(product.id, { storage: cap }, product)
+                              }
+                              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold tabular-nums transition-colors cursor-pointer ${
+                                selection.storage === cap
+                                  ? 'bg-white text-black'
+                                  : 'bg-white/[0.05] text-[#A1A1AA] hover:text-white border border-white/10'
+                              }`}
+                            >
+                              {cap}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Interactive Finish Swatches */}
+                        <div className="flex items-center justify-between pt-1">
+                          <div className="flex items-center gap-2">
+                            {product.finishes.map((fin, idx) => (
+                              <button
+                                key={fin.name}
+                                type="button"
+                                onClick={() =>
+                                  updateSelection(product.id, { finishIdx: idx }, product)
+                                }
+                                title={fin.name}
+                                aria-label={`Cor ${fin.name}`}
+                                className={`w-5 h-5 rounded-full border-2 transition-transform cursor-pointer ${
+                                  selection.finishIdx === idx
+                                    ? 'border-[#FF7A29] scale-110'
+                                    : 'border-white/20 hover:scale-105'
+                                }`}
+                                style={{ backgroundColor: fin.swatch }}
+                              />
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setModalProduct(product)}
+                            className="text-xs font-medium text-[#A1A1AA] hover:text-[#FF7A29] transition-colors cursor-pointer"
+                          >
+                            Ficha técnica
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card CTA */}
+                    <div className="px-5 pb-5">
+                      <a
+                        href={buildWhatsAppUrl(whatsappMessage)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 w-full py-3.5 px-4 bg-[#FF7A29]/12 border border-[#FF7A29]/60 text-[#FF8C42] font-bold text-sm rounded-xl hover:bg-[#FF7A29] hover:text-black transition-all"
+                      >
+                        <WhatsAppIcon size={19} />
+                        Falar com o atendente
+                      </a>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* --- 3. Interactive Trade-In Section (High-Converting Sales Funnel) --- */}
+        <section id="troca" className="py-24 px-6 sm:px-10 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch bg-matte-onyx border border-white/[0.08] rounded-3xl p-8 sm:p-12">
+            <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
+              <div className="space-y-4">
+                <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#FF7A29]">
+                  Upgrade Inteligente
+                </p>
+                <h2 className="text-3xl sm:text-4xl font-display font-bold text-white leading-tight">
+                  Seu iPhone usado vale entrada na hora.
+                </h2>
+                <p className="text-[#A1A1AA] leading-relaxed">
+                  Quer migrar para a linha iPhone 18 ou fazer upgrade para um modelo Pro? Informe os dados do seu aparelho atual e receba uma pré-avaliação rápida pelo WhatsApp.
+                </p>
+              </div>
+
+              <div className="space-y-3 pt-4 border-t border-white/10 text-sm text-[#D4D4D8]">
+                <p className="flex items-center gap-2.5">
+                  <Award size={18} className="text-[#FF7A29] shrink-0" />
+                  Avaliação transparente e sem burocracia
+                </p>
+                <p className="flex items-center gap-2.5">
+                  <RefreshCw size={18} className="text-[#FF7A29] shrink-0" />
+                  Transferimos 100% dos seus dados na hora
+                </p>
+                <p className="flex items-center gap-2.5">
+                  <CreditCard size={18} className="text-[#FF7A29] shrink-0" />
+                  Parcele a diferença em até 18x no cartão
+                </p>
+              </div>
+            </div>
+
+            <div className="lg:col-span-7 bg-[#0B0B0D] border border-white/[0.07] rounded-2xl p-6 sm:p-8 flex flex-col justify-between gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <label className="space-y-2 block">
+                  <span className="text-xs font-semibold text-[#A1A1AA]">
+                    Qual é o seu iPhone atual?
+                  </span>
+                  <select
+                    value={tradeModel}
+                    onChange={(e) => setTradeModel(e.target.value)}
+                    className="w-full h-12 px-4 rounded-xl bg-matte-onyx border border-white/10 text-white text-sm focus:outline-none focus:border-[#FF7A29]"
+                  >
+                    {[
+                      'iPhone 11',
+                      'iPhone 12 / 12 Pro',
+                      'iPhone 13 / 13 Pro',
+                      'iPhone 14 / 14 Pro',
+                      'iPhone 15 / 15 Pro',
+                      'iPhone 16 / 16 Pro',
+                      'iPhone 17 / 17 Pro',
+                    ].map((m) => (
+                      <option key={m} value={m} className="bg-matte-onyx">
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="space-y-2 block">
+                  <span className="text-xs font-semibold text-[#A1A1AA]">
+                    Armazenamento do seu aparelho
+                  </span>
+                  <select
+                    value={tradeStorage}
+                    onChange={(e) => setTradeStorage(e.target.value)}
+                    className="w-full h-12 px-4 rounded-xl bg-matte-onyx border border-white/10 text-white text-sm focus:outline-none focus:border-[#FF7A29]"
+                  >
+                    {['64GB', '128GB', '256GB', '512GB', '1TB'].map((s) => (
+                      <option key={s} value={s} className="bg-matte-onyx">
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="space-y-2 block">
+                  <span className="text-xs font-semibold text-[#A1A1AA]">
+                    Estado de conservação
+                  </span>
+                  <select
+                    value={tradeCondition}
+                    onChange={(e) => setTradeCondition(e.target.value)}
+                    className="w-full h-12 px-4 rounded-xl bg-matte-onyx border border-white/10 text-white text-sm focus:outline-none focus:border-[#FF7A29]"
+                  >
+                    {[
+                      'Excelente estado (sem marcas)',
+                      'Bom estado (marcas leves de uso)',
+                      'Tela ou traseira trincada',
+                    ].map((c) => (
+                      <option key={c} value={c} className="bg-matte-onyx">
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="space-y-2 block">
+                  <span className="text-xs font-semibold text-[#A1A1AA]">
+                    Qual modelo você quer levar?
+                  </span>
+                  <select
+                    value={tradeTarget}
+                    onChange={(e) => setTradeTarget(e.target.value)}
+                    className="w-full h-12 px-4 rounded-xl bg-matte-onyx border border-white/10 text-white text-sm focus:outline-none focus:border-[#FF7A29]"
+                  >
+                    {[
+                      'iPhone 18 Pro Max',
+                      'iPhone 18 Pro',
+                      'iPhone 18',
+                      'iPhone 17 Pro Max',
+                      'iPhone 16 Pro Max',
+                      'iPhone 15 Pro (Seminovo)',
+                      'Outro modelo',
+                    ].map((t) => (
+                      <option key={t} value={t} className="bg-matte-onyx">
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <a
+                href={tradeInWhatsAppUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary inline-flex items-center justify-center gap-2.5 w-full text-center"
+              >
+                <WhatsAppIcon size={21} />
+                Avaliar meu {tradeModel} no WhatsApp
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* --- 4. Services & Trust Pillars --- */}
+        <section id="servicos" className="py-20 px-6 sm:px-10 max-w-7xl mx-auto">
+          <div className="max-w-2xl mb-14 space-y-3">
+            <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#FF7A29]">
+              Solução Completa Apple
+            </p>
+            <h2 className="text-3xl sm:text-5xl font-display font-bold text-white">
+              Venda e Assistência com Padrão de Excelência
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-14">
+            <div className="premium-card p-8 sm:p-10 rounded-2xl space-y-5">
+              <div className="w-14 h-14 bg-[#FF7A29]/12 rounded-xl flex items-center justify-center text-[#FF7A29]">
+                <Smartphone size={28} />
+              </div>
+              <h3 className="text-2xl font-display font-bold text-white">
+                Venda de iPhones Lacrados e Seminovos
+              </h3>
+              <p className="text-[#A1A1AA] leading-relaxed">
+                Catálogo selecionado desde o iPhone 13 até a nova geração iPhone 18. Todos os aparelhos passam por inspeção rigorosa, procedência garantida e entrega segura em Maricá.
+              </p>
+              <a
+                href="#vitrine"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-[#FF7A29] hover:text-[#FF984F] transition-colors"
+              >
+                Ver modelos disponíveis
+                <ArrowRight size={16} />
+              </a>
+            </div>
+
+            <div className="premium-card p-8 sm:p-10 rounded-2xl space-y-5">
+              <div className="w-14 h-14 bg-[#FF7A29]/12 rounded-xl flex items-center justify-center text-[#FF7A29]">
+                <Wrench size={28} />
+              </div>
+              <h3 className="text-2xl font-display font-bold text-white">
+                Laboratório Técnico Especializado Apple
+              </h3>
+              <p className="text-[#A1A1AA] leading-relaxed">
+                Troca de tela, bateria, conector, vidro traseiro, Face ID e reparos avançados em placa com equipamentos de precisão e diagnóstico transparente.
+              </p>
+              <a
+                href={buildWhatsAppUrl(
+                  'Olá! Vim pelo site da Power Tec e preciso de um orçamento para conserto de iPhone.'
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-[#FF7A29] hover:text-[#FF984F] transition-colors"
+              >
+                Solicitar orçamento técnico
+                <ArrowRight size={16} />
+              </a>
+            </div>
+          </div>
+
+          {/* 3 Pillars */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10 border-t border-white/[0.07]">
+            <div className="space-y-2.5">
+              <ShieldCheck size={30} className="text-[#FF7A29]" />
+              <h3 className="text-lg font-display font-bold text-white">Garantia Documentada</h3>
+              <p className="text-sm text-[#A1A1AA] leading-relaxed">
+                Compra e reparo com recibo e termo de garantia claros, para você usar seu aparelho com tranquilidade total.
+              </p>
+            </div>
+            <div className="space-y-2.5">
+              <TrendingUp size={30} className="text-[#FF7A29]" />
+              <h3 className="text-lg font-display font-bold text-white">Procedência Verificada</h3>
+              <p className="text-sm text-[#A1A1AA] leading-relaxed">
+                Trabalhamos exclusivamente com aparelhos homologados e peças de alto padrão de qualidade.
+              </p>
+            </div>
+            <div className="space-y-2.5">
+              <Smartphone size={30} className="text-[#FF7A29]" />
+              <h3 className="text-lg font-display font-bold text-white">Suporte Pós-Venda</h3>
+              <p className="text-sm text-[#A1A1AA] leading-relaxed">
+                Migração de dados na loja e equipe sempre pronta no WhatsApp para tirar qualquer dúvida após a compra.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* --- 5. Real Customers Marquee --- */}
+        <section className="py-24 overflow-hidden border-y border-white/[0.06] bg-[#08080A]">
+          <div className="max-w-7xl mx-auto px-6 sm:px-10 mb-14 text-center space-y-3">
+            <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#FF7A29]">
+              Clientes Reais em Maricá
+            </p>
+            <h2 className="text-3xl sm:text-5xl font-display font-bold text-white">
+              O Padrão Power Tec
+            </h2>
+            <p className="text-[#A1A1AA] max-w-2xl mx-auto">
+              Mais de 2.400 clientes já escolheram a Power Tec para comprar ou cuidar do seu iPhone.
             </p>
           </div>
-          
-          <div className="flex relative items-center mb-16">
-            <div ref={carouselRef} className="flex gap-6 whitespace-nowrap">
-              {[...clients, ...clients].map((src, i) => (
-                <div key={i} className="w-[300px] h-[400px] flex-shrink-0 rounded-2xl overflow-hidden transition-all duration-500 hover:scale-105 shadow-2xl">
-                  <img 
-                    src={src} 
-                    alt={`Customer ${i}`} 
+
+          <div className="relative flex overflow-hidden mb-14">
+            <div className="flex gap-6 animate-marquee w-max">
+              {[...CLIENT_PHOTOS, ...CLIENT_PHOTOS].map((src, i) => (
+                <div
+                  key={i}
+                  className="w-[260px] sm:w-[290px] h-[350px] sm:h-[380px] shrink-0 rounded-2xl overflow-hidden border border-white/[0.07] bg-matte-onyx"
+                >
+                  <img
+                    src={src}
+                    alt={`Cliente satisfeito Power Tec ${(i % CLIENT_PHOTOS.length) + 1}`}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      // Fallback case if pathing remains an issue in specific build environments
-                      const target = e.target as HTMLImageElement;
-                      if (!target.src.includes('public/')) {
-                        target.src = '/public' + target.src.substring(target.src.lastIndexOf('/'));
-                      }
-                    }}
                   />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Testimonial CTA Button */}
-          <div className="max-w-7xl mx-auto px-8 flex justify-center reveal">
-            <motion.a 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              href="https://api.whatsapp.com/send?phone=5521967296969&text=Olá!%20Vi%20os%20clientes%20satisfeitos%20no%20site%20e%20gostaria%20de%20falar%20com%20um%20atendente."
+          <div className="max-w-7xl mx-auto px-6 flex justify-center">
+            <a
+              href={buildWhatsAppUrl(
+                'Olá! Vi os clientes satisfeitos no site da Power Tec e gostaria de falar com um atendente.'
+              )}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-4 px-12 py-6 bg-[#25D366] text-white font-extrabold text-xl rounded-2xl shadow-[0_20px_50px_rgba(37,211,102,0.3)] hover:shadow-[0_20px_60px_rgba(37,211,102,0.5)] transition-all group"
+              className="inline-flex items-center gap-3.5 px-9 sm:px-12 py-5 bg-[#FF7A29]/12 border-2 border-[#FF7A29] text-[#FF8C42] hover:bg-[#FF7A29] hover:text-black font-extrabold text-base sm:text-lg rounded-2xl shadow-[0_14px_40px_rgba(255,122,41,0.22)] hover:shadow-[0_18px_50px_rgba(255,122,41,0.4)] transition-all"
             >
-              <WhatsAppIcon size={32} className="text-white group-hover:rotate-12 transition-transform" />
+              <WhatsAppIcon size={28} />
               FALAR COM UM ATENDENTE
-            </motion.a>
+            </a>
           </div>
         </section>
 
-        {/* --- Trust Factors --- */}
-        <section className="py-24 px-8 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
-          <div className="text-center space-y-4 reveal">
-            <div className="mx-auto w-12 h-12 text-brand-orange"><ShieldCheck size={48} /></div>
-            <h3 className="text-xl font-bold">Garantia Real</h3>
-            <p className="text-[#A1A1AA]">Todos os nossos produtos e serviços possuem garantia documentada.</p>
-          </div>
-          <div className="text-center space-y-4 reveal delay-100">
-            <div className="mx-auto w-12 h-12 text-brand-orange"><TrendingUp size={48} /></div>
-            <h3 className="text-xl font-bold">Procedência Apple</h3>
-            <p className="text-[#A1A1AA]">Trabalhamos apenas com peças e aparelhos de procedência verificada.</p>
-          </div>
-          <div className="text-center space-y-4 reveal delay-200">
-            <div className="mx-auto w-12 h-12 text-brand-orange"><Smartphone size={48} /></div>
-            <h3 className="text-xl font-bold">Suporte Vitalício</h3>
-            <p className="text-[#A1A1AA]">Estamos sempre à disposição para tirar dúvidas e auxiliar pós-venda.</p>
-          </div>
-        </section>
-      </main>
-
-      {/* --- Footer --- */}
-      <footer className="footer-blur py-16 px-10 border-t border-white/5 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
-          <div className="space-y-6">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-brand-orange rounded-lg flex items-center justify-center font-bold text-black font-display">P</div>
-              <div className="text-xl font-display font-bold tracking-tighter uppercase italic">
-                POWER <span className="text-brand-orange">TEC</span>
-              </div>
-            </div>
-            <p className="text-[#A1A1AA] text-sm leading-relaxed">
-              Elevando o conceito de assistência e venda Apple para um novo patamar de exclusividade e confiança em Maricá.
+        {/* --- 6. Buyer FAQ --- */}
+        <section className="py-24 px-6 sm:px-10 max-w-4xl mx-auto">
+          <div className="text-center mb-12 space-y-3">
+            <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#FF7A29]">
+              Tire suas dúvidas
             </p>
-          </div>
-          
-          <div className="space-y-6">
-            <h4 className="font-bold text-white text-xs uppercase tracking-widest">CONTATOS</h4>
-            <ul className="space-y-4 text-sm text-[#A1A1AA]">
-              <li className="flex items-center gap-3">
-                <WhatsAppIcon size={18} className="text-brand-orange" />
-                (21) 96729-6969
-              </li>
-              <li className="flex items-center gap-3">
-                <Mail size={18} className="text-brand-orange" />
-                powertecmarica@gmail.com
-              </li>
-              <li className="flex items-center gap-3">
-                <Instagram size={18} className="text-brand-orange" />
-                @_powertec
-              </li>
-            </ul>
+            <h2 className="text-3xl sm:text-4xl font-display font-bold text-white">
+              Perguntas Frequentes
+            </h2>
           </div>
 
-          <div className="space-y-6 md:col-span-2">
-            <h4 className="font-bold text-white text-xs uppercase tracking-widest">LOCALIZAÇÃO</h4>
-            <div className="relative group overflow-hidden rounded-2xl border border-white/5 bg-black/30 backdrop-blur-sm">
-              {/* Google Maps Iframe with Dark Filter */}
-              <div className="w-full h-48 sm:h-64 relative grayscale contrast-125 brightness-50 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700">
-                <iframe 
-                  src="https://maps.google.com/maps?q=Av.%20vereador%20Francisco%20Sabino%20da%20Costa,%20291%20-%20Maric%C3%A1%20-%20RJ&t=&z=15&ie=UTF8&iwloc=&output=embed"
-                  className="w-full h-full border-0"
+          <div className="divide-y divide-white/10 border-y border-white/10">
+            {FAQ_ITEMS.map((item, idx) => {
+              const isOpen = openFaq === idx;
+              return (
+                <div key={idx} className="py-5">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(isOpen ? null : idx)}
+                    className="w-full flex items-center justify-between gap-4 text-left cursor-pointer"
+                    aria-expanded={isOpen}
+                  >
+                    <span className="text-base sm:text-lg font-semibold text-white">
+                      {item.q}
+                    </span>
+                    <ChevronDown
+                      size={20}
+                      className={`text-[#FF7A29] shrink-0 transition-transform duration-200 ${
+                        isOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                  {isOpen && (
+                    <p className="mt-3 text-sm sm:text-base text-[#A1A1AA] leading-relaxed pr-8">
+                      {item.a}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* --- 7. Dedicated Location Section (Separate from Footer, Waze + Google Maps) --- */}
+        <section
+          id="localizacao"
+          className="py-24 px-6 sm:px-10 bg-[#0A0A0D] border-t border-white/[0.06]"
+        >
+          <div className="max-w-7xl mx-auto">
+            <div className="max-w-2xl mb-12 space-y-3">
+              <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#FF7A29]">
+                Visite nossa loja física
+              </p>
+              <h2 className="text-3xl sm:text-5xl font-display font-bold text-white">
+                Onde Estamos em Maricá
+              </h2>
+              <p className="text-[#A1A1AA] text-base">
+                Venha conhecer os aparelhos de perto, testar o seu próximo iPhone e traçar a rota direta pelo Waze ou Google Maps.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+              {/* Interactive Google Maps */}
+              <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-white/10 bg-matte-onyx min-h-[340px] lg:min-h-[430px]">
+                <iframe
+                  title="Mapa da Loja Power Tec Maricá"
+                  src={STORE_INFO.mapsEmbedUrl}
+                  className="w-full h-full min-h-[340px] lg:min-h-[430px] border-0"
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                ></iframe>
-              </div>
-              
-              {/* Floating Route Button */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <a 
-                  href="https://www.google.com/maps/dir/?api=1&destination=Av.+vereador+Francisco+Sabino+da+Costa,+291+-+Maricá+-+RJ"
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="pointer-events-auto px-6 py-3 bg-brand-orange text-black font-bold text-xs uppercase tracking-widest rounded-full shadow-premium transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 flex items-center gap-2"
-                >
-                  <MapPin size={16} />
-                  COMO CHEGAR / VER ROTA
-                </a>
+                />
               </div>
 
-              {/* Address Info Bar */}
-              <div className="p-5 flex gap-4 items-start border-t border-white/5 bg-matte-onyx/50 backdrop-blur-md">
-                <MapPin size={24} className="text-brand-orange flex-shrink-0 mt-1" />
-                <div className="space-y-1">
-                  <p className="text-sm text-white font-medium">Power Tec Maricá</p>
-                  <p className="text-xs text-[#A1A1AA] leading-relaxed">
-                    Av. vereador Francisco Sabino da Costa n.291 <br />
-                    (Em frente ao supermarket) - Maricá, RJ
+              {/* Address Details + Direct Waze & Google Maps Route Buttons */}
+              <div className="lg:col-span-5 bg-matte-onyx border border-white/[0.08] rounded-2xl p-7 sm:p-9 flex flex-col justify-between gap-8">
+                <div className="space-y-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-11 h-11 rounded-xl bg-[#FF7A29]/12 text-[#FF7A29] flex items-center justify-center shrink-0">
+                      <MapPin size={22} />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-lg font-display font-bold text-white">
+                        {STORE_INFO.name}
+                      </h3>
+                      <p className="text-sm text-[#D4D4D8] leading-relaxed">
+                        {STORE_INFO.street}
+                      </p>
+                      <p className="text-sm text-[#A1A1AA]">
+                        {STORE_INFO.reference} · CEP {STORE_INFO.cep}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 pt-5 border-t border-white/[0.07]">
+                    <div className="w-11 h-11 rounded-xl bg-[#FF7A29]/12 text-[#FF7A29] flex items-center justify-center shrink-0">
+                      <Clock size={22} />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-semibold text-white">
+                        Horário de Atendimento
+                      </h4>
+                      <p className="text-sm text-[#D4D4D8]">{STORE_INFO.hoursWeek}</p>
+                      <p className="text-sm text-[#A1A1AA]">{STORE_INFO.hoursSat}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Route Buttons: Waze + Google Maps */}
+                <div className="space-y-3 pt-4 border-t border-white/[0.07]">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[#A1A1AA]">
+                    Traçar rota até a loja
                   </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <a
+                      href={STORE_INFO.wazeRouteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-xl bg-[#33CCFF]/15 border border-[#33CCFF]/50 text-[#7CE0FF] hover:bg-[#33CCFF] hover:text-black font-bold text-sm transition-all whitespace-nowrap"
+                    >
+                      <WazeIcon size={20} />
+                      Abrir no Waze
+                    </a>
+
+                    <a
+                      href={STORE_INFO.googleMapsRouteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-xl bg-[#FF7A29] hover:bg-[#FF8C42] text-black font-bold text-sm transition-all whitespace-nowrap"
+                    >
+                      <Navigation size={18} />
+                      Google Maps
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </section>
+      </main>
+
+      {/* --- Clean Footer (Without Map/Location Widget) --- */}
+      <footer className="bg-matte-black py-16 px-6 sm:px-10 border-t border-white/[0.07]">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-linear-to-br from-[#FF7A29] to-[#FF5A00] rounded-lg flex items-center justify-center font-extrabold text-black font-display">
+                P
+              </div>
+              <span className="text-xl font-display font-bold tracking-tight uppercase italic text-white">
+                POWER <span className="text-[#FF7A29]">TEC</span>
+              </span>
+            </div>
+            <p className="text-[#A1A1AA] text-sm leading-relaxed max-w-xs">
+              Venda de iPhones lacrados, seminovos selecionados e assistência técnica especializada Apple em Maricá.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="font-semibold text-white text-sm">Navegação</h4>
+            <ul className="space-y-2.5 text-sm text-[#A1A1AA]">
+              <li>
+                <a href="#hero" className="hover:text-white transition-colors">
+                  Início
+                </a>
+              </li>
+              <li>
+                <a href="#vitrine" className="hover:text-white transition-colors">
+                  Vitrine iPhone 18
+                </a>
+              </li>
+              <li>
+                <a href="#troca" className="hover:text-white transition-colors">
+                  Avaliar Usado na Troca
+                </a>
+              </li>
+              <li>
+                <a href="#servicos" className="hover:text-white transition-colors">
+                  Serviços e Assistência
+                </a>
+              </li>
+              <li>
+                <a href="#localizacao" className="hover:text-white transition-colors">
+                  Localização e Rotas
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="font-semibold text-white text-sm">Contatos</h4>
+            <ul className="space-y-3 text-sm text-[#A1A1AA]">
+              <li>
+                <a
+                  href={buildWhatsAppUrl('Olá! Vim pelo site da Power Tec.')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3 hover:text-white transition-colors"
+                >
+                  <WhatsAppIcon size={18} className="text-[#FF7A29]" />
+                  {STORE_INFO.phoneDisplay}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`mailto:${STORE_INFO.email}`}
+                  className="inline-flex items-center gap-3 hover:text-white transition-colors"
+                >
+                  <Mail size={18} className="text-[#FF7A29]" />
+                  {STORE_INFO.email}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={STORE_INFO.instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3 hover:text-white transition-colors"
+                >
+                  <Instagram size={18} className="text-[#FF7A29]" />
+                  {STORE_INFO.instagram}
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
-        
-        <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex space-x-6 text-[10px] text-[#A1A1AA] uppercase tracking-widest">
-            <span>© Power Tec 2026</span>
-            <a href="#" className="hover:text-white transition-colors">Instagram</a>
-            <a href="#" className="hover:text-white transition-colors">WhatsApp</a>
-          </div>
 
-          <div className="flex items-center space-x-2 text-[10px] text-[#A1A1AA]">
-            <div className="w-1.5 h-1.5 bg-brand-orange rounded-full animate-pulse shadow-[0_0_8px_rgba(255,90,0,1)]"></div>
-            <span className="uppercase tracking-tighter">Status: Laboratório Aberto</span>
-          </div>
-
-          <div className="text-[10px] text-[#A1A1AA] italic">
-            powertecmarica@gmail.com
-          </div>
+        <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-white/[0.07] flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-[#A1A1AA]">
+          <span>© 2026 Power Tec Maricá. Todos os direitos reservados.</span>
+          <span>Maricá · Rio de Janeiro</span>
         </div>
       </footer>
 
-      {/* --- Side Floating Widget (Conversion) --- */}
-      <div className="fixed bottom-10 right-8 z-50">
-        <motion.a 
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          href="https://api.whatsapp.com/send?phone=5521967296969"
+      {/* --- Floating WhatsApp Bubble (Speech Bubble with Centered Outline Icon) --- */}
+      <div className="fixed bottom-6 right-5 sm:bottom-8 sm:right-8 z-50">
+        <motion.a
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.94 }}
+          href={buildWhatsAppUrl(
+            'Olá! Vim pelo site da Power Tec e quero falar com um atendente.'
+          )}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-brand-orange w-14 h-14 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(255,90,0,0.4)] cursor-pointer"
+          aria-label="Falar no WhatsApp"
+          className="relative flex items-center justify-center w-16 h-16 rounded-full rounded-br-sm bg-linear-to-br from-[#FF8C42] via-[#FF7321] to-[#FF5A00] text-white shadow-[0_12px_32px_rgba(255,115,33,0.55)] hover:shadow-[0_14px_42px_rgba(255,130,50,0.75)] ring-2 ring-white/25 transition-shadow cursor-pointer"
         >
-          <WhatsAppIcon size={32} className="text-black" />
+          <WhatsAppIcon size={34} className="relative z-10 text-white" />
         </motion.a>
       </div>
+
+      {/* --- Product Quick-View Modal --- */}
+      <ProductModal
+        product={modalProduct}
+        initialStorage={
+          modalProduct ? getSelection(modalProduct).storage : undefined
+        }
+        initialFinishIdx={
+          modalProduct ? getSelection(modalProduct).finishIdx : 0
+        }
+        onClose={() => setModalProduct(null)}
+      />
     </div>
   );
 }
