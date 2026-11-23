@@ -17,15 +17,30 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    overflow-x: clip;
   }
 
   body {
-    @apply bg-matte-black text-[#F5F5F7] font-sans antialiased overflow-x-hidden;
+    @apply bg-matte-black text-[#F5F5F7] font-sans antialiased overflow-x-clip;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  a, button, select {
+    touch-action: manipulation;
   }
 
   h1, h2, h3 {
     text-wrap: balance;
   }
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 .text-gradient {
@@ -37,11 +52,11 @@
 }
 
 .btn-primary {
-  @apply px-7 py-4 bg-linear-to-r from-[#FF7A29] to-[#FF5A00] text-black font-bold tracking-wide rounded-xl shadow-premium transition-all duration-200 hover:brightness-110 active:scale-[0.98];
+  @apply px-6 sm:px-7 py-3.5 sm:py-4 bg-linear-to-r from-[#FF7A29] to-[#FF5A00] text-black font-bold tracking-wide rounded-xl shadow-premium transition-all duration-200 hover:brightness-110 active:scale-[0.98];
 }
 
 .nav-blur {
-  @apply backdrop-blur-lg bg-matte-black/75 border-b border-white/[0.06];
+  @apply backdrop-blur-lg bg-matte-black/80 border-b border-white/[0.06];
 }
 
 @keyframes marquee-scroll {
@@ -55,6 +70,7 @@
 
 .animate-marquee {
   animation: marquee-scroll 36s linear infinite;
+  will-change: transform;
 }
 
 .animate-marquee:hover {

@@ -28,6 +28,7 @@ import {
   Product,
   ProductCategory,
   buildWhatsAppUrl,
+  assetUrl,
 } from './data/catalog';
 import { WhatsAppIcon, WazeIcon, PhoneStudioVisual } from './components/Icons';
 import { ProductModal } from './components/ProductModal';
@@ -39,7 +40,8 @@ function ThreeBackground() {
   useEffect(() => {
     if (!canvasRef.current) return;
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) return;
+    // Skip heavy WebGL background on mobile devices for instant load & 60fps scrolling
+    if (prefersReduced || window.innerWidth < 768) return;
 
     const renderer = new THREE.WebGLRenderer({
       canvas: canvasRef.current,
@@ -196,16 +198,16 @@ export default function App() {
 
       {/* --- Top Navigation (3-Zone Contract) --- */}
       <header className="fixed top-0 inset-x-0 z-50 nav-blur">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-20 flex items-center justify-between gap-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 h-16 sm:h-20 flex items-center justify-between gap-4 sm:gap-8">
           {/* Zone 1: Brand Wordmark */}
           <a
             href="#hero"
-            className="flex items-center gap-2.5 whitespace-nowrap shrink-0"
+            className="flex items-center gap-2 whitespace-nowrap shrink-0"
           >
-            <div className="w-9 h-9 bg-linear-to-br from-[#FF7A29] to-[#FF5A00] rounded-lg flex items-center justify-center font-extrabold text-black font-display text-lg">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 bg-linear-to-br from-[#FF7A29] to-[#FF5A00] rounded-lg flex items-center justify-center font-extrabold text-black font-display text-base sm:text-lg">
               P
             </div>
-            <span className="text-xl font-display font-bold tracking-tight uppercase italic text-white">
+            <span className="text-lg sm:text-xl font-display font-bold tracking-tight uppercase italic text-white">
               POWER <span className="text-[#FF7A29]">TEC</span>
             </span>
           </a>
@@ -245,7 +247,7 @@ export default function App() {
           </nav>
 
           {/* Zone 3: Single Primary Action + Mobile Trigger */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
             <a
               href={buildWhatsAppUrl(
                 'Olá! Vim pelo site da Power Tec e gostaria de falar com um atendente.'
@@ -262,6 +264,7 @@ export default function App() {
               type="button"
               onClick={() => setMobileMenuOpen((v) => !v)}
               aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+              aria-expanded={mobileMenuOpen}
               className="lg:hidden w-11 h-11 rounded-xl border border-white/10 bg-white/5 text-white flex items-center justify-center cursor-pointer"
             >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -271,8 +274,8 @@ export default function App() {
 
         {/* Mobile Drawer Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-white/10 bg-matte-black/95 backdrop-blur-xl px-6 py-5 space-y-4">
-            <nav className="flex flex-col space-y-3 text-base font-medium text-[#D4D4D8]">
+          <div className="lg:hidden border-t border-white/10 bg-matte-black/95 backdrop-blur-xl px-5 py-5 space-y-4">
+            <nav className="flex flex-col space-y-1 text-base font-medium text-[#D4D4D8]">
               {[
                 { href: '#hero', label: 'Início' },
                 { href: '#vitrine', label: 'Vitrine iPhone 18' },
@@ -284,7 +287,7 @@ export default function App() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="py-1.5 hover:text-[#FF7A29] transition-colors"
+                  className="py-2.5 hover:text-[#FF7A29] transition-colors"
                 >
                   {link.label}
                 </a>
@@ -296,7 +299,7 @@ export default function App() {
               )}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-3.5 bg-[#FF7A29] text-black font-bold rounded-xl"
+              className="flex items-center justify-center gap-2 w-full min-h-[48px] py-3.5 bg-[#FF7A29] text-black font-bold rounded-xl"
             >
               <WhatsAppIcon size={19} />
               Falar no WhatsApp
@@ -309,7 +312,7 @@ export default function App() {
         {/* --- 1. Full-Bleed Hero Section --- */}
         <section
           id="hero"
-          className="relative isolate w-full min-h-[100dvh] flex flex-col justify-between pt-28 pb-10 px-6 sm:px-10 overflow-hidden"
+          className="relative isolate w-full min-h-[100dvh] flex flex-col justify-between pt-20 pb-8 sm:pt-28 sm:pb-10 px-4 sm:px-10 overflow-hidden"
         >
           <div className="absolute inset-0 w-full h-full -z-10 overflow-hidden pointer-events-none">
             <video
@@ -321,28 +324,28 @@ export default function App() {
               className="w-full h-full min-w-full min-h-full object-cover object-center opacity-35"
             >
               <source
-                src="/Cinematic_macro_close-up_of_a_202605181050.mp4"
+                src={assetUrl('Cinematic_macro_close-up_of_a_202605181050.mp4')}
                 type="video/mp4"
               />
             </video>
             <div className="absolute inset-0 bg-linear-to-b from-matte-black/65 via-matte-black/30 to-matte-black" />
           </div>
 
-          <div className="my-auto w-full max-w-4xl mx-auto text-center space-y-7 relative z-10 py-10">
+          <div className="my-auto w-full max-w-4xl mx-auto text-center space-y-5 sm:space-y-7 relative z-10 py-6 sm:py-10">
             <motion.p
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45 }}
-              className="text-xs sm:text-sm font-semibold tracking-[0.2em] uppercase text-[#FF8C42]"
+              className="text-[11px] sm:text-sm font-semibold tracking-[0.16em] sm:tracking-[0.2em] uppercase text-[#FF8C42]"
             >
-              Especialistas Apple em Maricá · Linha iPhone 18 Disponível
+              Especialistas Apple em Maricá · Linha iPhone 18
             </motion.p>
 
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="text-4xl sm:text-6xl lg:text-7xl font-display font-bold leading-[1.02] tracking-tight text-gradient"
+              className="text-[2.15rem] sm:text-6xl lg:text-7xl font-display font-bold leading-[1.06] sm:leading-[1.02] tracking-tight text-gradient"
             >
               A Experiência <span className="text-[#FF7A29]">Premium</span>{' '}
               que o seu Apple Merece.
@@ -352,7 +355,7 @@ export default function App() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.12 }}
-              className="text-base sm:text-lg lg:text-xl text-[#D4D4D8] max-w-2xl mx-auto leading-relaxed"
+              className="text-[15px] sm:text-lg lg:text-xl text-[#D4D4D8] max-w-2xl mx-auto leading-relaxed"
             >
               iPhones lacrados de última geração, seminovos revisados com garantia documentada e avaliação justa do seu usado na troca.
             </motion.p>
@@ -361,7 +364,7 @@ export default function App() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.22 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2"
+              className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-1 sm:pt-2"
             >
               <a
                 href={buildWhatsAppUrl(
@@ -369,7 +372,7 @@ export default function App() {
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-primary inline-flex items-center justify-center gap-2.5 w-full sm:w-auto whitespace-nowrap"
+                className="btn-primary inline-flex items-center justify-center gap-2.5 w-full sm:w-auto min-h-[48px] text-sm sm:text-base whitespace-nowrap"
               >
                 <WhatsAppIcon size={21} />
                 Fale com um Especialista
@@ -377,7 +380,7 @@ export default function App() {
 
               <a
                 href="#vitrine"
-                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.09] text-white font-semibold transition-colors w-full sm:w-auto whitespace-nowrap"
+                className="inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3.5 sm:py-4 min-h-[48px] rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.09] text-white font-semibold text-sm sm:text-base transition-colors w-full sm:w-auto whitespace-nowrap"
               >
                 Explorar Vitrine
                 <ArrowRight size={18} />
@@ -389,13 +392,13 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.35 }}
-              className="flex items-center justify-center gap-3.5 pt-2"
+              className="flex items-center justify-center gap-3 pt-1 sm:pt-2"
             >
               <div className="flex -space-x-2.5">
                 {CLIENT_PHOTOS.slice(0, 4).map((src, i) => (
                   <div
                     key={i}
-                    className="w-10 h-10 rounded-full border-2 border-matte-black overflow-hidden bg-neutral-800"
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-matte-black overflow-hidden bg-neutral-800"
                   >
                     <img
                       src={src}
@@ -407,10 +410,10 @@ export default function App() {
                 ))}
               </div>
               <div className="text-left leading-tight">
-                <p className="text-sm font-bold text-white tabular-nums">
+                <p className="text-xs sm:text-sm font-bold text-white tabular-nums">
                   +2.400 clientes atendidos
                 </p>
-                <p className="text-xs text-[#A1A1AA]">
+                <p className="text-[11px] sm:text-xs text-[#A1A1AA]">
                   Referência em iPhones em Maricá
                 </p>
               </div>
@@ -418,57 +421,57 @@ export default function App() {
           </div>
 
           {/* 4-Column Store Highlights Strip */}
-          <div className="relative z-10 max-w-7xl w-full mx-auto pt-6 border-t border-white/10 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <div className="flex items-center gap-3">
-              <Smartphone size={20} className="text-[#FF7A29] shrink-0" />
+          <div className="relative z-10 max-w-7xl w-full mx-auto pt-5 sm:pt-6 border-t border-white/10 grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-6">
+            <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
+              <Smartphone size={18} className="text-[#FF7A29] shrink-0 mt-0.5 sm:mt-0" />
               <div>
-                <p className="text-sm font-semibold text-white">Linha iPhone 18</p>
-                <p className="text-xs text-[#A1A1AA]">18, 18 Pro e 18 Pro Max</p>
+                <p className="text-xs sm:text-sm font-semibold text-white">Linha iPhone 18</p>
+                <p className="text-[11px] sm:text-xs text-[#A1A1AA]">18, 18 Pro e Pro Max</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <RefreshCw size={20} className="text-[#FF7A29] shrink-0" />
+            <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
+              <RefreshCw size={18} className="text-[#FF7A29] shrink-0 mt-0.5 sm:mt-0" />
               <div>
-                <p className="text-sm font-semibold text-white">Troca Facilitada</p>
-                <p className="text-xs text-[#A1A1AA]">Seu usado vale entrada</p>
+                <p className="text-xs sm:text-sm font-semibold text-white">Troca Facilitada</p>
+                <p className="text-[11px] sm:text-xs text-[#A1A1AA]">Seu usado vale entrada</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <CreditCard size={20} className="text-[#FF7A29] shrink-0" />
+            <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
+              <CreditCard size={18} className="text-[#FF7A29] shrink-0 mt-0.5 sm:mt-0" />
               <div>
-                <p className="text-sm font-semibold text-white">Até 18x no Cartão</p>
-                <p className="text-xs text-[#A1A1AA]">Ou condição especial no PIX</p>
+                <p className="text-xs sm:text-sm font-semibold text-white">Até 18x no Cartão</p>
+                <p className="text-[11px] sm:text-xs text-[#A1A1AA]">Ou desconto no PIX</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <ShieldCheck size={20} className="text-[#FF7A29] shrink-0" />
+            <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
+              <ShieldCheck size={18} className="text-[#FF7A29] shrink-0 mt-0.5 sm:mt-0" />
               <div>
-                <p className="text-sm font-semibold text-white">Garantia Real</p>
-                <p className="text-xs text-[#A1A1AA]">Procedência 100% verificada</p>
+                <p className="text-xs sm:text-sm font-semibold text-white">Garantia Real</p>
+                <p className="text-[11px] sm:text-xs text-[#A1A1AA]">Procedência verificada</p>
               </div>
             </div>
           </div>
         </section>
 
         {/* --- 2. Interactive Vitrine Premium (Sales Core) --- */}
-        <section id="vitrine" className="py-24 px-6 sm:px-10 bg-[#0A0A0D] border-t border-white/[0.06]">
+        <section id="vitrine" className="py-16 sm:py-24 px-4 sm:px-10 bg-[#0A0A0D] border-t border-white/[0.06]">
           <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12">
-              <div className="space-y-3 max-w-2xl">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-5 sm:gap-6 mb-8 sm:mb-12">
+              <div className="space-y-2.5 sm:space-y-3 max-w-2xl">
                 <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#FF7A29]">
                   Catálogo Atualizado · Geração 18
                 </p>
                 <h2 className="text-3xl sm:text-5xl font-display font-bold text-gradient">
                   Vitrine Premium Power Tec
                 </h2>
-                <p className="text-[#A1A1AA] text-base">
+                <p className="text-[#A1A1AA] text-sm sm:text-base">
                   Escolha o modelo, a capacidade e o acabamento ideal. Consulte disponibilidade em tempo real direto com nossa equipe.
                 </p>
               </div>
 
-              {/* Functional Category Filter Tabs */}
+              {/* Functional Category Filter Tabs (Swipeable single row on mobile) */}
               <div
-                className="flex flex-wrap items-center gap-1.5 p-1.5 bg-matte-onyx border border-white/10 rounded-xl w-fit"
+                className="flex items-center gap-1.5 p-1.5 bg-matte-onyx border border-white/10 rounded-xl max-w-full overflow-x-auto no-scrollbar"
                 role="tablist"
                 aria-label="Filtrar aparelhos por categoria"
               >
@@ -481,7 +484,7 @@ export default function App() {
                       role="tab"
                       aria-selected={isActive}
                       onClick={() => setActiveFilter(tab.id)}
-                      className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                      className={`px-3.5 sm:px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                         isActive
                           ? 'bg-[#FF7A29] text-black'
                           : 'text-[#A1A1AA] hover:text-white'
@@ -495,7 +498,7 @@ export default function App() {
             </div>
 
             {/* Product Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
               {filteredProducts.map((product) => {
                 const selection = getSelection(product);
                 const activeFinish =
@@ -512,7 +515,7 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => setModalProduct(product)}
-                        className="relative block w-full aspect-[4/5] overflow-hidden bg-[#0E0E11] text-left cursor-pointer"
+                        className="relative block w-full aspect-[4/4] sm:aspect-[4/5] overflow-hidden bg-[#0E0E11] text-left cursor-pointer"
                         aria-label={`Ver detalhes do ${product.name}`}
                       >
                         {product.img ? (
@@ -532,14 +535,14 @@ export default function App() {
                           />
                         )}
 
-                        <span className="absolute top-3 right-3 px-3 py-1.5 rounded-lg bg-black/70 backdrop-blur-md border border-white/10 text-[11px] font-medium text-white inline-flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="absolute top-3 right-3 px-3 py-1.5 rounded-lg bg-black/75 backdrop-blur-md border border-white/10 text-[11px] font-medium text-white inline-flex items-center gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           <Eye size={13} />
                           Detalhes
                         </span>
                       </button>
 
                       {/* Card Body */}
-                      <div className="p-5 space-y-4">
+                      <div className="p-4 sm:p-5 space-y-4">
                         <div>
                           <div className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider uppercase text-[#FF7A29]">
                             <span>{product.condition}</span>
@@ -560,7 +563,7 @@ export default function App() {
                         </div>
 
                         {/* Interactive Storage Options */}
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-2">
                           {product.storages.map((cap) => (
                             <button
                               key={cap}
@@ -568,7 +571,7 @@ export default function App() {
                               onClick={() =>
                                 updateSelection(product.id, { storage: cap }, product)
                               }
-                              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold tabular-nums transition-colors cursor-pointer ${
+                              className={`px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-md text-xs sm:text-[11px] font-semibold tabular-nums transition-colors cursor-pointer ${
                                 selection.storage === cap
                                   ? 'bg-white text-black'
                                   : 'bg-white/[0.05] text-[#A1A1AA] hover:text-white border border-white/10'
@@ -581,7 +584,7 @@ export default function App() {
 
                         {/* Interactive Finish Swatches */}
                         <div className="flex items-center justify-between pt-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2.5 sm:gap-2">
                             {product.finishes.map((fin, idx) => (
                               <button
                                 key={fin.name}
@@ -591,7 +594,7 @@ export default function App() {
                                 }
                                 title={fin.name}
                                 aria-label={`Cor ${fin.name}`}
-                                className={`w-5 h-5 rounded-full border-2 transition-transform cursor-pointer ${
+                                className={`w-6 h-6 sm:w-5 sm:h-5 rounded-full border-2 transition-transform cursor-pointer ${
                                   selection.finishIdx === idx
                                     ? 'border-[#FF7A29] scale-110'
                                     : 'border-white/20 hover:scale-105'
@@ -603,7 +606,7 @@ export default function App() {
                           <button
                             type="button"
                             onClick={() => setModalProduct(product)}
-                            className="text-xs font-medium text-[#A1A1AA] hover:text-[#FF7A29] transition-colors cursor-pointer"
+                            className="text-xs font-medium text-[#A1A1AA] hover:text-[#FF7A29] py-1 transition-colors cursor-pointer"
                           >
                             Ficha técnica
                           </button>
@@ -612,12 +615,12 @@ export default function App() {
                     </div>
 
                     {/* Card CTA */}
-                    <div className="px-5 pb-5">
+                    <div className="px-4 pb-4 sm:px-5 sm:pb-5">
                       <a
                         href={buildWhatsAppUrl(whatsappMessage)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 w-full py-3.5 px-4 bg-[#FF7A29]/12 border border-[#FF7A29]/60 text-[#FF8C42] font-bold text-sm rounded-xl hover:bg-[#FF7A29] hover:text-black transition-all"
+                        className="flex items-center justify-center gap-2 w-full min-h-[46px] py-3.5 px-4 bg-[#FF7A29]/12 border border-[#FF7A29]/60 text-[#FF8C42] font-bold text-sm rounded-xl hover:bg-[#FF7A29] hover:text-black transition-all"
                       >
                         <WhatsAppIcon size={19} />
                         Falar com o atendente
@@ -631,17 +634,17 @@ export default function App() {
         </section>
 
         {/* --- 3. Interactive Trade-In Section (High-Converting Sales Funnel) --- */}
-        <section id="troca" className="py-24 px-6 sm:px-10 max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch bg-matte-onyx border border-white/[0.08] rounded-3xl p-8 sm:p-12">
-            <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
-              <div className="space-y-4">
+        <section id="troca" className="py-16 sm:py-24 px-4 sm:px-10 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 sm:gap-10 items-stretch bg-matte-onyx border border-white/[0.08] rounded-2xl sm:rounded-3xl p-5 sm:p-10 lg:p-12">
+            <div className="lg:col-span-5 flex flex-col justify-between space-y-5 sm:space-y-6">
+              <div className="space-y-3 sm:space-y-4">
                 <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#FF7A29]">
                   Upgrade Inteligente
                 </p>
-                <h2 className="text-3xl sm:text-4xl font-display font-bold text-white leading-tight">
+                <h2 className="text-2xl sm:text-4xl font-display font-bold text-white leading-tight">
                   Seu iPhone usado vale entrada na hora.
                 </h2>
-                <p className="text-[#A1A1AA] leading-relaxed">
+                <p className="text-sm sm:text-base text-[#A1A1AA] leading-relaxed">
                   Quer migrar para a linha iPhone 18 ou fazer upgrade para um modelo Pro? Informe os dados do seu aparelho atual e receba uma pré-avaliação rápida pelo WhatsApp.
                 </p>
               </div>
@@ -662,16 +665,16 @@ export default function App() {
               </div>
             </div>
 
-            <div className="lg:col-span-7 bg-[#0B0B0D] border border-white/[0.07] rounded-2xl p-6 sm:p-8 flex flex-col justify-between gap-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <label className="space-y-2 block">
+            <div className="lg:col-span-7 bg-[#0B0B0D] border border-white/[0.07] rounded-2xl p-4 sm:p-8 flex flex-col justify-between gap-5 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                <label className="space-y-1.5 block">
                   <span className="text-xs font-semibold text-[#A1A1AA]">
                     Qual é o seu iPhone atual?
                   </span>
                   <select
                     value={tradeModel}
                     onChange={(e) => setTradeModel(e.target.value)}
-                    className="w-full h-12 px-4 rounded-xl bg-matte-onyx border border-white/10 text-white text-sm focus:outline-none focus:border-[#FF7A29]"
+                    className="w-full h-12 px-3.5 rounded-xl bg-matte-onyx border border-white/10 text-white text-base sm:text-sm focus:outline-none focus:border-[#FF7A29]"
                   >
                     {[
                       'iPhone 11',
@@ -689,14 +692,14 @@ export default function App() {
                   </select>
                 </label>
 
-                <label className="space-y-2 block">
+                <label className="space-y-1.5 block">
                   <span className="text-xs font-semibold text-[#A1A1AA]">
                     Armazenamento do seu aparelho
                   </span>
                   <select
                     value={tradeStorage}
                     onChange={(e) => setTradeStorage(e.target.value)}
-                    className="w-full h-12 px-4 rounded-xl bg-matte-onyx border border-white/10 text-white text-sm focus:outline-none focus:border-[#FF7A29]"
+                    className="w-full h-12 px-3.5 rounded-xl bg-matte-onyx border border-white/10 text-white text-base sm:text-sm focus:outline-none focus:border-[#FF7A29]"
                   >
                     {['64GB', '128GB', '256GB', '512GB', '1TB'].map((s) => (
                       <option key={s} value={s} className="bg-matte-onyx">
@@ -706,14 +709,14 @@ export default function App() {
                   </select>
                 </label>
 
-                <label className="space-y-2 block">
+                <label className="space-y-1.5 block">
                   <span className="text-xs font-semibold text-[#A1A1AA]">
                     Estado de conservação
                   </span>
                   <select
                     value={tradeCondition}
                     onChange={(e) => setTradeCondition(e.target.value)}
-                    className="w-full h-12 px-4 rounded-xl bg-matte-onyx border border-white/10 text-white text-sm focus:outline-none focus:border-[#FF7A29]"
+                    className="w-full h-12 px-3.5 rounded-xl bg-matte-onyx border border-white/10 text-white text-base sm:text-sm focus:outline-none focus:border-[#FF7A29]"
                   >
                     {[
                       'Excelente estado (sem marcas)',
@@ -727,14 +730,14 @@ export default function App() {
                   </select>
                 </label>
 
-                <label className="space-y-2 block">
+                <label className="space-y-1.5 block">
                   <span className="text-xs font-semibold text-[#A1A1AA]">
                     Qual modelo você quer levar?
                   </span>
                   <select
                     value={tradeTarget}
                     onChange={(e) => setTradeTarget(e.target.value)}
-                    className="w-full h-12 px-4 rounded-xl bg-matte-onyx border border-white/10 text-white text-sm focus:outline-none focus:border-[#FF7A29]"
+                    className="w-full h-12 px-3.5 rounded-xl bg-matte-onyx border border-white/10 text-white text-base sm:text-sm focus:outline-none focus:border-[#FF7A29]"
                   >
                     {[
                       'iPhone 18 Pro Max',
@@ -757,7 +760,7 @@ export default function App() {
                 href={tradeInWhatsAppUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-primary inline-flex items-center justify-center gap-2.5 w-full text-center"
+                className="btn-primary inline-flex items-center justify-center gap-2.5 w-full min-h-[48px] text-sm sm:text-base text-center"
               >
                 <WhatsAppIcon size={21} />
                 Avaliar meu {tradeModel} no WhatsApp
@@ -767,8 +770,8 @@ export default function App() {
         </section>
 
         {/* --- 4. Services & Trust Pillars --- */}
-        <section id="servicos" className="py-20 px-6 sm:px-10 max-w-7xl mx-auto">
-          <div className="max-w-2xl mb-14 space-y-3">
+        <section id="servicos" className="py-16 sm:py-20 px-4 sm:px-10 max-w-7xl mx-auto">
+          <div className="max-w-2xl mb-10 sm:mb-14 space-y-2.5 sm:space-y-3">
             <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#FF7A29]">
               Solução Completa Apple
             </p>
@@ -777,34 +780,34 @@ export default function App() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-14">
-            <div className="premium-card p-8 sm:p-10 rounded-2xl space-y-5">
-              <div className="w-14 h-14 bg-[#FF7A29]/12 rounded-xl flex items-center justify-center text-[#FF7A29]">
-                <Smartphone size={28} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 mb-12 sm:mb-14">
+            <div className="premium-card p-6 sm:p-10 rounded-2xl space-y-4 sm:space-y-5">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#FF7A29]/12 rounded-xl flex items-center justify-center text-[#FF7A29]">
+                <Smartphone size={26} />
               </div>
-              <h3 className="text-2xl font-display font-bold text-white">
+              <h3 className="text-xl sm:text-2xl font-display font-bold text-white">
                 Venda de iPhones Lacrados e Seminovos
               </h3>
-              <p className="text-[#A1A1AA] leading-relaxed">
+              <p className="text-sm sm:text-base text-[#A1A1AA] leading-relaxed">
                 Catálogo selecionado desde o iPhone 13 até a nova geração iPhone 18. Todos os aparelhos passam por inspeção rigorosa, procedência garantida e entrega segura em Maricá.
               </p>
               <a
                 href="#vitrine"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-[#FF7A29] hover:text-[#FF984F] transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-[#FF7A29] hover:text-[#FF984F] transition-colors py-1"
               >
                 Ver modelos disponíveis
                 <ArrowRight size={16} />
               </a>
             </div>
 
-            <div className="premium-card p-8 sm:p-10 rounded-2xl space-y-5">
-              <div className="w-14 h-14 bg-[#FF7A29]/12 rounded-xl flex items-center justify-center text-[#FF7A29]">
-                <Wrench size={28} />
+            <div className="premium-card p-6 sm:p-10 rounded-2xl space-y-4 sm:space-y-5">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#FF7A29]/12 rounded-xl flex items-center justify-center text-[#FF7A29]">
+                <Wrench size={26} />
               </div>
-              <h3 className="text-2xl font-display font-bold text-white">
+              <h3 className="text-xl sm:text-2xl font-display font-bold text-white">
                 Laboratório Técnico Especializado Apple
               </h3>
-              <p className="text-[#A1A1AA] leading-relaxed">
+              <p className="text-sm sm:text-base text-[#A1A1AA] leading-relaxed">
                 Troca de tela, bateria, conector, vidro traseiro, Face ID e reparos avançados em placa com equipamentos de precisão e diagnóstico transparente.
               </p>
               <a
@@ -813,7 +816,7 @@ export default function App() {
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-[#FF7A29] hover:text-[#FF984F] transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-[#FF7A29] hover:text-[#FF984F] transition-colors py-1"
               >
                 Solicitar orçamento técnico
                 <ArrowRight size={16} />
@@ -822,23 +825,23 @@ export default function App() {
           </div>
 
           {/* 3 Pillars */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10 border-t border-white/[0.07]">
-            <div className="space-y-2.5">
-              <ShieldCheck size={30} className="text-[#FF7A29]" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 pt-8 sm:pt-10 border-t border-white/[0.07]">
+            <div className="space-y-2">
+              <ShieldCheck size={28} className="text-[#FF7A29]" />
               <h3 className="text-lg font-display font-bold text-white">Garantia Documentada</h3>
               <p className="text-sm text-[#A1A1AA] leading-relaxed">
                 Compra e reparo com recibo e termo de garantia claros, para você usar seu aparelho com tranquilidade total.
               </p>
             </div>
-            <div className="space-y-2.5">
-              <TrendingUp size={30} className="text-[#FF7A29]" />
+            <div className="space-y-2">
+              <TrendingUp size={28} className="text-[#FF7A29]" />
               <h3 className="text-lg font-display font-bold text-white">Procedência Verificada</h3>
               <p className="text-sm text-[#A1A1AA] leading-relaxed">
                 Trabalhamos exclusivamente com aparelhos homologados e peças de alto padrão de qualidade.
               </p>
             </div>
-            <div className="space-y-2.5">
-              <Smartphone size={30} className="text-[#FF7A29]" />
+            <div className="space-y-2">
+              <Smartphone size={28} className="text-[#FF7A29]" />
               <h3 className="text-lg font-display font-bold text-white">Suporte Pós-Venda</h3>
               <p className="text-sm text-[#A1A1AA] leading-relaxed">
                 Migração de dados na loja e equipe sempre pronta no WhatsApp para tirar qualquer dúvida após a compra.
@@ -848,25 +851,25 @@ export default function App() {
         </section>
 
         {/* --- 5. Real Customers Marquee --- */}
-        <section className="py-24 overflow-hidden border-y border-white/[0.06] bg-[#08080A]">
-          <div className="max-w-7xl mx-auto px-6 sm:px-10 mb-14 text-center space-y-3">
+        <section className="py-16 sm:py-24 overflow-hidden border-y border-white/[0.06] bg-[#08080A]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-10 mb-10 sm:mb-14 text-center space-y-2.5 sm:space-y-3">
             <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#FF7A29]">
               Clientes Reais em Maricá
             </p>
             <h2 className="text-3xl sm:text-5xl font-display font-bold text-white">
               O Padrão Power Tec
             </h2>
-            <p className="text-[#A1A1AA] max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base text-[#A1A1AA] max-w-2xl mx-auto">
               Mais de 2.400 clientes já escolheram a Power Tec para comprar ou cuidar do seu iPhone.
             </p>
           </div>
 
-          <div className="relative flex overflow-hidden mb-14">
-            <div className="flex gap-6 animate-marquee w-max">
+          <div className="relative flex overflow-hidden mb-10 sm:mb-14">
+            <div className="flex gap-4 sm:gap-6 animate-marquee w-max">
               {[...CLIENT_PHOTOS, ...CLIENT_PHOTOS].map((src, i) => (
                 <div
                   key={i}
-                  className="w-[260px] sm:w-[290px] h-[350px] sm:h-[380px] shrink-0 rounded-2xl overflow-hidden border border-white/[0.07] bg-matte-onyx"
+                  className="w-[220px] sm:w-[290px] h-[290px] sm:h-[380px] shrink-0 rounded-2xl overflow-hidden border border-white/[0.07] bg-matte-onyx"
                 >
                   <img
                     src={src}
@@ -881,24 +884,24 @@ export default function App() {
             </div>
           </div>
 
-          <div className="max-w-7xl mx-auto px-6 flex justify-center">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex justify-center">
             <a
               href={buildWhatsAppUrl(
                 'Olá! Vi os clientes satisfeitos no site da Power Tec e gostaria de falar com um atendente.'
               )}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-3.5 px-9 sm:px-12 py-5 bg-[#FF7A29]/12 border-2 border-[#FF7A29] text-[#FF8C42] hover:bg-[#FF7A29] hover:text-black font-extrabold text-base sm:text-lg rounded-2xl shadow-[0_14px_40px_rgba(255,122,41,0.22)] hover:shadow-[0_18px_50px_rgba(255,122,41,0.4)] transition-all"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-6 sm:px-12 py-4 sm:py-5 min-h-[52px] bg-[#FF7A29]/12 border-2 border-[#FF7A29] text-[#FF8C42] hover:bg-[#FF7A29] hover:text-black font-extrabold text-sm sm:text-lg rounded-2xl shadow-[0_14px_40px_rgba(255,122,41,0.22)] hover:shadow-[0_18px_50px_rgba(255,122,41,0.4)] transition-all"
             >
-              <WhatsAppIcon size={28} />
+              <WhatsAppIcon size={24} />
               FALAR COM UM ATENDENTE
             </a>
           </div>
         </section>
 
         {/* --- 6. Buyer FAQ --- */}
-        <section className="py-24 px-6 sm:px-10 max-w-4xl mx-auto">
-          <div className="text-center mb-12 space-y-3">
+        <section className="py-16 sm:py-24 px-4 sm:px-10 max-w-4xl mx-auto">
+          <div className="text-center mb-10 sm:mb-12 space-y-2.5 sm:space-y-3">
             <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#FF7A29]">
               Tire suas dúvidas
             </p>
@@ -911,14 +914,14 @@ export default function App() {
             {FAQ_ITEMS.map((item, idx) => {
               const isOpen = openFaq === idx;
               return (
-                <div key={idx} className="py-5">
+                <div key={idx} className="py-4 sm:py-5">
                   <button
                     type="button"
                     onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full flex items-center justify-between gap-4 text-left cursor-pointer"
+                    className="w-full min-h-[44px] flex items-center justify-between gap-4 text-left cursor-pointer"
                     aria-expanded={isOpen}
                   >
-                    <span className="text-base sm:text-lg font-semibold text-white">
+                    <span className="text-[15px] sm:text-lg font-semibold text-white leading-snug">
                       {item.q}
                     </span>
                     <ChevronDown
@@ -929,7 +932,7 @@ export default function App() {
                     />
                   </button>
                   {isOpen && (
-                    <p className="mt-3 text-sm sm:text-base text-[#A1A1AA] leading-relaxed pr-8">
+                    <p className="mt-3 text-sm sm:text-base text-[#A1A1AA] leading-relaxed pr-4 sm:pr-8">
                       {item.a}
                     </p>
                   )}
@@ -942,28 +945,28 @@ export default function App() {
         {/* --- 7. Dedicated Location Section (Separate from Footer, Waze + Google Maps) --- */}
         <section
           id="localizacao"
-          className="py-24 px-6 sm:px-10 bg-[#0A0A0D] border-t border-white/[0.06]"
+          className="py-16 sm:py-24 px-4 sm:px-10 bg-[#0A0A0D] border-t border-white/[0.06]"
         >
           <div className="max-w-7xl mx-auto">
-            <div className="max-w-2xl mb-12 space-y-3">
+            <div className="max-w-2xl mb-8 sm:mb-12 space-y-2.5 sm:space-y-3">
               <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#FF7A29]">
                 Visite nossa loja física
               </p>
               <h2 className="text-3xl sm:text-5xl font-display font-bold text-white">
                 Onde Estamos em Maricá
               </h2>
-              <p className="text-[#A1A1AA] text-base">
+              <p className="text-[#A1A1AA] text-sm sm:text-base">
                 Venha conhecer os aparelhos de perto, testar o seu próximo iPhone e traçar a rota direta pelo Waze ou Google Maps.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
               {/* Interactive Google Maps */}
-              <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-white/10 bg-matte-onyx min-h-[340px] lg:min-h-[430px]">
+              <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-white/10 bg-matte-onyx h-[280px] sm:h-[360px] lg:h-auto lg:min-h-[430px]">
                 <iframe
                   title="Mapa da Loja Power Tec Maricá"
                   src={STORE_INFO.mapsEmbedUrl}
-                  className="w-full h-full min-h-[340px] lg:min-h-[430px] border-0"
+                  className="w-full h-full border-0"
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
@@ -971,28 +974,28 @@ export default function App() {
               </div>
 
               {/* Address Details + Direct Waze & Google Maps Route Buttons */}
-              <div className="lg:col-span-5 bg-matte-onyx border border-white/[0.08] rounded-2xl p-7 sm:p-9 flex flex-col justify-between gap-8">
-                <div className="space-y-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-11 h-11 rounded-xl bg-[#FF7A29]/12 text-[#FF7A29] flex items-center justify-center shrink-0">
-                      <MapPin size={22} />
+              <div className="lg:col-span-5 bg-matte-onyx border border-white/[0.08] rounded-2xl p-5 sm:p-9 flex flex-col justify-between gap-6 sm:gap-8">
+                <div className="space-y-5 sm:space-y-6">
+                  <div className="flex items-start gap-3.5 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#FF7A29]/12 text-[#FF7A29] flex items-center justify-center shrink-0">
+                      <MapPin size={20} />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-lg font-display font-bold text-white">
+                      <h3 className="text-base sm:text-lg font-display font-bold text-white">
                         {STORE_INFO.name}
                       </h3>
                       <p className="text-sm text-[#D4D4D8] leading-relaxed">
                         {STORE_INFO.street}
                       </p>
-                      <p className="text-sm text-[#A1A1AA]">
+                      <p className="text-xs sm:text-sm text-[#A1A1AA]">
                         {STORE_INFO.reference} · CEP {STORE_INFO.cep}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 pt-5 border-t border-white/[0.07]">
-                    <div className="w-11 h-11 rounded-xl bg-[#FF7A29]/12 text-[#FF7A29] flex items-center justify-center shrink-0">
-                      <Clock size={22} />
+                  <div className="flex items-start gap-3.5 sm:gap-4 pt-5 border-t border-white/[0.07]">
+                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#FF7A29]/12 text-[#FF7A29] flex items-center justify-center shrink-0">
+                      <Clock size={20} />
                     </div>
                     <div className="space-y-1">
                       <h4 className="text-sm font-semibold text-white">
@@ -1014,7 +1017,7 @@ export default function App() {
                       href={STORE_INFO.wazeRouteUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-xl bg-[#33CCFF]/15 border border-[#33CCFF]/50 text-[#7CE0FF] hover:bg-[#33CCFF] hover:text-black font-bold text-sm transition-all whitespace-nowrap"
+                      className="flex items-center justify-center gap-2.5 min-h-[48px] py-3.5 px-4 rounded-xl bg-[#33CCFF]/15 border border-[#33CCFF]/50 text-[#7CE0FF] hover:bg-[#33CCFF] hover:text-black font-bold text-sm transition-all whitespace-nowrap"
                     >
                       <WazeIcon size={20} />
                       Abrir no Waze
@@ -1024,7 +1027,7 @@ export default function App() {
                       href={STORE_INFO.googleMapsRouteUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-xl bg-[#FF7A29] hover:bg-[#FF8C42] text-black font-bold text-sm transition-all whitespace-nowrap"
+                      className="flex items-center justify-center gap-2.5 min-h-[48px] py-3.5 px-4 rounded-xl bg-[#FF7A29] hover:bg-[#FF8C42] text-black font-bold text-sm transition-all whitespace-nowrap"
                     >
                       <Navigation size={18} />
                       Google Maps
@@ -1038,8 +1041,8 @@ export default function App() {
       </main>
 
       {/* --- Clean Footer (Without Map/Location Widget) --- */}
-      <footer className="bg-matte-black py-16 px-6 sm:px-10 border-t border-white/[0.07]">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+      <footer className="bg-matte-black py-14 sm:py-16 pb-24 sm:pb-16 px-4 sm:px-10 border-t border-white/[0.07]">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 sm:gap-12">
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 bg-linear-to-br from-[#FF7A29] to-[#FF5A00] rounded-lg flex items-center justify-center font-extrabold text-black font-display">
@@ -1123,14 +1126,14 @@ export default function App() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-white/[0.07] flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-[#A1A1AA]">
+        <div className="max-w-7xl mx-auto mt-10 sm:mt-12 pt-8 border-t border-white/[0.07] flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-[#A1A1AA] text-center sm:text-left">
           <span>© 2026 Power Tec Maricá. Todos os direitos reservados.</span>
           <span>Maricá · Rio de Janeiro</span>
         </div>
       </footer>
 
       {/* --- Floating WhatsApp Bubble (Speech Bubble with Centered Outline Icon) --- */}
-      <div className="fixed bottom-6 right-5 sm:bottom-8 sm:right-8 z-50">
+      <div className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-4 sm:bottom-8 sm:right-8 z-50">
         <motion.a
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.94 }}
@@ -1140,9 +1143,9 @@ export default function App() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Falar no WhatsApp"
-          className="relative flex items-center justify-center w-16 h-16 rounded-full rounded-br-sm bg-linear-to-br from-[#FF8C42] via-[#FF7321] to-[#FF5A00] text-white shadow-[0_12px_32px_rgba(255,115,33,0.55)] hover:shadow-[0_14px_42px_rgba(255,130,50,0.75)] ring-2 ring-white/25 transition-shadow cursor-pointer"
+          className="relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full rounded-br-sm bg-linear-to-br from-[#FF8C42] via-[#FF7321] to-[#FF5A00] text-white shadow-[0_12px_32px_rgba(255,115,33,0.55)] hover:shadow-[0_14px_42px_rgba(255,130,50,0.75)] ring-2 ring-white/25 transition-shadow cursor-pointer"
         >
-          <WhatsAppIcon size={34} className="relative z-10 text-white" />
+          <WhatsAppIcon size={30} className="relative z-10 text-white sm:w-[34px] sm:h-[34px]" />
         </motion.a>
       </div>
 

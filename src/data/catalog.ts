@@ -50,6 +50,11 @@ export function buildWhatsAppUrl(message: string) {
   return `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`;
 }
 
+export function assetUrl(fileName: string) {
+  const clean = fileName.replace(/^\/+/, '');
+  return `${import.meta.env.BASE_URL}${clean}`;
+}
+
 export const PRODUCTS: Product[] = [
   {
     id: 'iphone-18-pro-max',
@@ -183,7 +188,7 @@ export const PRODUCTS: Product[] = [
     price: 'Sob Consulta',
     installmentHint: 'Pronta entrega · Consulte cores disponíveis',
     storages: ['256GB', '512GB'],
-    img: '/AISelect_20260508_121856_WhatsApp.jpg',
+    img: assetUrl('AISelect_20260508_121856_WhatsApp.jpg'),
     cameraLayout: 'triple-pro',
     warranty: '1 ano de garantia oficial Apple',
     finishes: [
@@ -217,7 +222,7 @@ export const PRODUCTS: Product[] = [
     price: 'Sob Consulta',
     installmentHint: 'Pronta entrega em Maricá · Até 18x',
     storages: ['256GB', '512GB'],
-    img: '/AISelect_20260508_121612_WhatsApp.jpg',
+    img: assetUrl('AISelect_20260508_121612_WhatsApp.jpg'),
     cameraLayout: 'triple-pro',
     warranty: '1 ano de garantia oficial Apple',
     finishes: [
@@ -284,7 +289,7 @@ export const PRODUCTS: Product[] = [
     price: 'R$ 2.590',
     installmentHint: 'À vista no PIX ou parcelado em até 18x',
     storages: ['128GB', '256GB'],
-    img: '/Screenshot_20260508_121257_Instagram.jpg',
+    img: assetUrl('Screenshot_20260508_121257_Instagram.jpg'),
     cameraLayout: 'dual',
     warranty: 'Garantia documentada Power Tec',
     finishes: [
@@ -318,7 +323,7 @@ export const PRODUCTS: Product[] = [
     price: 'R$ 2.190',
     installmentHint: 'À vista no PIX ou parcelado em até 18x',
     storages: ['128GB', '256GB'],
-    img: '/Screenshot_20260508_121352_Instagram.jpg',
+    img: assetUrl('Screenshot_20260508_121352_Instagram.jpg'),
     cameraLayout: 'dual',
     warranty: 'Garantia documentada Power Tec',
     finishes: [
@@ -346,15 +351,15 @@ export const PRODUCTS: Product[] = [
 ];
 
 export const CLIENT_PHOTOS = [
-  '/AISelect_20260508_124523_Instagram.jpg',
-  '/AISelect_20260508_124508_Instagram.jpg',
-  '/AISelect_20260508_124455_Instagram.jpg',
-  '/AISelect_20260508_124447_Instagram.jpg',
-  '/AISelect_20260508_124438_Instagram.jpg',
-  '/AISelect_20260508_122234_Instagram.jpg',
-  '/AISelect_20260508_122212_Instagram.jpg',
-  '/AISelect_20260508_122157_Instagram.jpg',
-  '/AISelect_20260508_122139_Instagram.jpg',
+  assetUrl('AISelect_20260508_124523_Instagram.jpg'),
+  assetUrl('AISelect_20260508_124508_Instagram.jpg'),
+  assetUrl('AISelect_20260508_124455_Instagram.jpg'),
+  assetUrl('AISelect_20260508_124447_Instagram.jpg'),
+  assetUrl('AISelect_20260508_124438_Instagram.jpg'),
+  assetUrl('AISelect_20260508_122234_Instagram.jpg'),
+  assetUrl('AISelect_20260508_122212_Instagram.jpg'),
+  assetUrl('AISelect_20260508_122157_Instagram.jpg'),
+  assetUrl('AISelect_20260508_122139_Instagram.jpg'),
 ];
 
 export const FAQ_ITEMS = [

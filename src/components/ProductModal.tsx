@@ -46,27 +46,27 @@ export function ProductModal({
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md"
+      className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/80 backdrop-blur-md"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-product-title"
     >
       <div
-        className="relative w-full max-w-3xl bg-[#111113] border border-white/10 rounded-2xl overflow-hidden shadow-2xl grid grid-cols-1 md:grid-cols-2 max-h-[90vh] overflow-y-auto"
+        className="relative w-full max-w-3xl bg-[#111113] border-t sm:border border-white/10 rounded-t-3xl sm:rounded-2xl overflow-hidden shadow-2xl grid grid-cols-1 md:grid-cols-2 max-h-[92dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
           aria-label="Fechar detalhes"
-          className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/60 border border-white/10 text-white/80 hover:text-white hover:border-white/30 flex items-center justify-center transition-colors cursor-pointer"
+          className="absolute top-3.5 right-3.5 z-20 w-11 h-11 rounded-full bg-black/75 border border-white/15 text-white hover:border-white/35 flex items-center justify-center transition-colors cursor-pointer"
         >
-          <X size={18} />
+          <X size={20} />
         </button>
 
         {/* Left visual */}
-        <div className="aspect-[4/5] md:aspect-auto md:min-h-[440px] bg-[#0B0B0D] relative overflow-hidden">
+        <div className="aspect-[16/11] sm:aspect-[4/5] md:aspect-auto md:min-h-[440px] bg-[#0B0B0D] relative overflow-hidden">
           {product.img ? (
             <img
               src={product.img}
@@ -84,7 +84,7 @@ export function ProductModal({
         </div>
 
         {/* Right details */}
-        <div className="p-6 sm:p-8 flex flex-col justify-between gap-6">
+        <div className="p-5 sm:p-8 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col justify-between gap-5">
           <div className="space-y-5">
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold text-[#FF7A29] tracking-wide">
