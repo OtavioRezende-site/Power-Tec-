@@ -52,7 +52,12 @@ export function buildWhatsAppUrl(message: string) {
 
 export function assetUrl(fileName: string) {
   const clean = fileName.replace(/^\/+/, '');
-  return `${import.meta.env.BASE_URL}${clean}`;
+  const customBase =
+    typeof window !== 'undefined'
+      ? (window as Window & { __POWERTEC_ASSET_BASE__?: string })
+          .__POWERTEC_ASSET_BASE__
+      : undefined;
+  return `${customBase ?? import.meta.env.BASE_URL}${clean}`;
 }
 
 export const PRODUCTS: Product[] = [
